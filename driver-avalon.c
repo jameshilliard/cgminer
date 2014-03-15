@@ -843,7 +843,7 @@ static struct cgpu_info *avalon_detect_one(libusb_device *dev, struct usb_find_d
 	}
 	configured = get_options(this_option_offset, &baud, &miner_count,
 				 &asic_count, &timeout, &frequency, &asic,
-				 this_options);
+				 (usb_ident(avalon) == IDENT_BBF && opt_bitburner_fury_options != NULL) ? opt_bitburner_fury_options : opt_avalon_options);
 
 	/* Even though this is an FTDI type chip, we want to do the parsing
 	 * all ourselves so set it to std usb type */
