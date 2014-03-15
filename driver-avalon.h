@@ -1,6 +1,7 @@
 /*
  * Copyright 2013 Avalon project
  * Copyright 2013-2014 Con Kolivas <kernel@kolivas.org>
+ * Copyright 2014 James Hilliard <james.hilliard1@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
