@@ -422,6 +422,7 @@ struct block {
 
 static struct block *blocks = NULL;
 
+
 int swork_id;
 
 /* For creating a hash database of stratum shares submitted that have not had
@@ -438,7 +439,7 @@ struct stratum_share {
 static struct stratum_share *stratum_shares = NULL;
 
 char *opt_socks_proxy = NULL;
-
+int opt_suggest_diff;
 static const char def_conf[] = "cgminer.conf";
 static char *default_config;
 static bool config_loaded;
@@ -1735,6 +1736,9 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITH_ARG("--socks-proxy",
 		     opt_set_charp, NULL, &opt_socks_proxy,
 		     "Set socks4 proxy (host:port)"),
+	OPT_WITH_ARG("--suggest-diff",
+		     opt_set_intval, NULL, &opt_suggest_diff,
+		     "Suggest miner difficulty for pool to user (default: none)"),
 #ifdef HAVE_SYSLOG_H
 	OPT_WITHOUT_ARG("--syslog",
 			opt_set_bool, &use_syslog,
@@ -6182,6 +6186,15 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 	decay_time(&rolling15, hashes_done, tv_tdiff, 900.0);
 	global_hashrate = llround(total_rolling) * 1000000;
 	total_secs = tdiff(&total_tv_end, &total_tv_start);
+
+	if(total_secs - last_total_secs > 86400) {
+		applog(LOG_ERR, "cgminer time error total_secs = %d last_total_secs = %d", total_secs, last_total_secs);
+		mutex_unlock(&hash_lock);
+		zero_stats();
+		mutex_lock(&hash_lock);
+	} else {
+		last_total_secs = total_secs;
+	}
 	if (showlog) {
 		char displayed_hashes[16], displayed_rolling[16];
 		char displayed_r1[16], displayed_r5[16], displayed_r15[16];
@@ -6190,6 +6203,7 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 		d64 = (double)total_mhashes_done / total_secs * 1000000ull;
 		suffix_string(d64, displayed_hashes, sizeof(displayed_hashes), 4);
 		d64 = (double)total_rolling * 1000000ull;
+		g_displayed_rolling = total_rolling / 1000.0;
 		suffix_string(d64, displayed_rolling, sizeof(displayed_rolling), 4);
 		d64 = (double)rolling1 * 1000000ull;
 		suffix_string(d64, displayed_r1, sizeof(displayed_rolling), 4);
@@ -7141,6 +7155,7 @@ bool submit_nonce2_nonce(struct thr_info *thr, struct pool *pool, struct pool *r
 
 	work->mined = true;
 	work->device_diff = MIN(drv->max_diff, work->work_difficulty);
+	work->device_diff = MAX(drv->min_diff, work->device_diff);
 
 	ret = submit_nonce(thr, work, nonce);
 	free_work(work);
@@ -7429,6 +7444,7 @@ struct work *get_work(struct thr_info *thr, const int thr_id)
 	thread_reportin(thr);
 	work->mined = true;
 	work->device_diff = MIN(cgpu->drv->max_diff, work->work_difficulty);
+	work->device_diff = MAX(cgpu->drv->min_diff, work->device_diff);
 	return work;
 }
 
@@ -7735,6 +7751,7 @@ static void hash_sole_work(struct thr_info *mythr)
 			break;
 		}
 		work->device_diff = MIN(drv->max_diff, work->work_difficulty);
+		work->device_diff = MAX(drv->min_diff, work->device_diff);
 
 		do {
 			cgtime(&tv_start);
@@ -7888,14 +7905,10 @@ void __add_queued(struct cgpu_info *cgpu, struct work *work)
 	HASH_ADD_INT(cgpu->queued_work, id, work);
 }
 
-/* This function is for retrieving one work item from the unqueued pointer and
- * adding it to the hashtable of queued work. Code using this function must be
- * able to handle NULL as a return which implies there is no work available. */
-struct work *get_queued(struct cgpu_info *cgpu)
+struct work *__get_queued(struct cgpu_info *cgpu)
 {
 	struct work *work = NULL;
 
-	wr_lock(&cgpu->qlock);
 	if (cgpu->unqueued_work) {
 		work = cgpu->unqueued_work;
 		if (unlikely(stale_work(work, false))) {
@@ -7905,6 +7918,19 @@ struct work *get_queued(struct cgpu_info *cgpu)
 			__add_queued(cgpu, work);
 		cgpu->unqueued_work = NULL;
 	}
+
+	return work;
+}
+
+/* This function is for retrieving one work item from the unqueued pointer and
+ * adding it to the hashtable of queued work. Code using this function must be
+ * able to handle NULL as a return which implies there is no work available. */
+struct work *get_queued(struct cgpu_info *cgpu)
+{
+	struct work *work;
+
+	wr_lock(&cgpu->qlock);
+	work = __get_queued(cgpu);
 	wr_unlock(&cgpu->qlock);
 
 	return work;
@@ -9373,6 +9399,7 @@ void null_device_drv(struct device_drv *drv)
 
 	drv->zero_stats = &noop_zero_stats;
 	drv->max_diff = 1;
+	drv->min_diff = 1;
 }
 
 void enable_device(struct cgpu_info *cgpu)
