@@ -509,7 +509,7 @@ struct cgpu_info {
 
 	bool new_work;
 
-	float temp;
+	double temp;
 	int cutofftemp;
 
 	int64_t diff1;
