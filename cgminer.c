@@ -176,9 +176,6 @@ bool opt_restart = true;
 bool opt_nogpu;
 
 struct list_head scan_devices;
-static bool devices_enabled[MAX_DEVICES];
-static int opt_devs_enabled;
-
 static bool opt_display_devs;
 int total_devices;
 int zombie_devs;
@@ -186,7 +183,6 @@ static int most_devices;
 struct cgpu_info **devices;
 int mining_threads;
 int num_processors;
-
 #ifdef HAVE_CURSES
 bool use_curses = true;
 #else
@@ -203,7 +199,6 @@ bool opt_lowmem;
 bool opt_autofan;
 bool opt_autoengine;
 bool opt_noadl;
-char *opt_work_proxy = NULL;
 char *opt_version_path = NULL;
 char *opt_logfile_path = NULL;
 char *opt_logfile_openflag = NULL;
@@ -822,49 +817,6 @@ void get_intrange(char *arg, int *val1, int *val2)
 {
 	if (sscanf(arg, "%d-%d", val1, val2) == 1)
 		*val2 = *val1;
-}
-
-static char *set_devices(char *arg)
-{
-	int i, val1 = 0, val2 = 0;
-	char *nextptr;
-
-	if (*arg) {
-		if (*arg == '?') {
-			opt_display_devs = true;
-			return NULL;
-		}
-	} else
-		return "Invalid device parameters";
-
-	nextptr = strtok(arg, ",");
-	if (nextptr == NULL)
-		return "Invalid parameters for set devices";
-	get_intrange(nextptr, &val1, &val2);
-	if (val1 < 0 || val1 > MAX_DEVICES || val2 < 0 || val2 > MAX_DEVICES ||
-	    val1 > val2) {
-		return "Invalid value passed to set devices";
-	}
-
-	for (i = val1; i <= val2; i++) {
-		devices_enabled[i] = true;
-		opt_devs_enabled++;
-	}
-
-	while ((nextptr = strtok(NULL, ",")) != NULL) {
-		get_intrange(nextptr, &val1, &val2);
-		if (val1 < 0 || val1 > MAX_DEVICES || val2 < 0 || val2 > MAX_DEVICES ||
-		val1 > val2) {
-			return "Invalid value passed to set devices";
-		}
-
-		for (i = val1; i <= val2; i++) {
-			devices_enabled[i] = true;
-			opt_devs_enabled++;
-		}
-	}
-
-	return NULL;
 }
 
 static char *set_balance(enum pool_strategy *strategy)
@@ -6107,9 +6059,15 @@ static void thread_reportout(struct thr_info *thr)
 static void hashmeter(int thr_id, uint64_t hashes_done)
 {
 	bool showlog = false;
+        bool print  = false;
 	double tv_tdiff;
 	time_t now_t;
 	int diff_t;
+
+	uint64_t local_mhashes_done = 0;
+	uint64_t local_mhashes_done_avg = 0;
+	int local_mhashes_done_count = 0;
+	int i = 0;
 
 	cgtime(&total_tv_end);
 	tv_tdiff = tdiff(&total_tv_end, &tv_hashmeter);
@@ -6180,7 +6138,25 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 
 	mutex_lock(&hash_lock);
 	total_mhashes_done += hashes_done;
-	decay_time(&total_rolling, hashes_done, tv_tdiff, opt_log_interval);
+
+	g_local_mhashes_dones[g_local_mhashes_index] = hashes_done;
+	g_local_mhashes_index++;
+	if(g_local_mhashes_index >= CG_LOCAL_MHASHES_MAX_NUM)
+		g_local_mhashes_index = 0;
+
+	for(i = 0; i < CG_LOCAL_MHASHES_MAX_NUM; i++) {
+		if(g_local_mhashes_dones[i] >= 0) {
+			local_mhashes_done_avg += g_local_mhashes_dones[i];
+			local_mhashes_done_count++;
+		}
+	}
+	if(local_mhashes_done_count > CG_LOCAL_MHASHES_MAX_NUM/2) {
+		local_mhashes_done = local_mhashes_done_avg / local_mhashes_done_count;
+                print =  true;
+	} else {
+		local_mhashes_done = hashes_done;
+	}
+	decay_time(&total_rolling, local_mhashes_done, tv_tdiff, opt_log_interval);
 	decay_time(&rolling1, hashes_done, tv_tdiff, 60.0);
 	decay_time(&rolling5, hashes_done, tv_tdiff, 300.0);
 	decay_time(&rolling15, hashes_done, tv_tdiff, 900.0);
@@ -6195,7 +6171,7 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 	} else {
 		last_total_secs = total_secs;
 	}
-	if (showlog) {
+	if (showlog && print) {
 		char displayed_hashes[16], displayed_rolling[16];
 		char displayed_r1[16], displayed_r5[16], displayed_r15[16];
 		uint64_t d64;
@@ -6427,11 +6403,6 @@ static bool cnx_needed(struct pool *pool)
 	 * it. */
 	if (pool_strategy == POOL_FAILOVER && pool->prio < cp_prio())
 		return true;
-		/*We should not be checking for pool_unworkable in cnx_needed as it is keeping 
-		*stratum connections open on unused pools
-		
-	if (pool_unworkable(cp))
-		return true;*/
 	/* We've run out of work, bring anything back to life. */
 	if (no_work)
 		return true;
@@ -6637,14 +6608,13 @@ static void *stratum_sthread(void *userdata)
 			bool sessionid_match;
 
 			if (likely(stratum_send(pool, s, strlen(s)))) {
-				if (pool_tclear(pool, &pool->submit_fail))
-						applog(LOG_WARNING, "Pool %d communication resumed, submitting work", pool->pool_no);
-
 				mutex_lock(&sshare_lock);
 				HASH_ADD_INT(stratum_shares, id, sshare);
 				pool->sshares++;
 				mutex_unlock(&sshare_lock);
 
+				if (pool_tclear(pool, &pool->submit_fail))
+						applog(LOG_WARNING, "Pool %d communication resumed, submitting work", pool->pool_no);
 				applog(LOG_DEBUG, "Successfully submitted, adding to stratum_shares db");
 				submitted = true;
 				break;
@@ -7509,7 +7479,7 @@ static void submit_work_async(struct work *work)
 
 void inc_hw_errors(struct thr_info *thr)
 {
-	applog(LOG_INFO, "%s%d: invalid nonce - HW error", thr->cgpu->drv->name,
+	applog(LOG_ERR, "%s%d: invalid nonce - HW error", thr->cgpu->drv->name,
 	       thr->cgpu->device_id);
 
 	mutex_lock(&stats_lock);
@@ -7611,9 +7581,9 @@ bool submit_tested_work(struct thr_info *thr, struct work *work)
 /* Returns true if nonce for work was a valid share */
 bool submit_nonce(struct thr_info *thr, struct work *work, uint32_t nonce)
 {
-	if (test_nonce(work, nonce)) {
+	if (test_nonce(work, nonce))
 		submit_tested_work(thr, work);
-	} else {
+	else {
 		inc_hw_errors(thr);
 		return false;
 	}
@@ -8867,7 +8837,6 @@ void print_summary(void)
 	struct timeval diff;
 	int hours, mins, secs, i;
 	double utility, displayed_hashes, work_util;
-	bool mhash_base = true;
 
 	timersub(&total_tv_end, &total_tv_start, &diff);
 	hours = diff.tv_sec / 3600;
@@ -8883,12 +8852,8 @@ void print_summary(void)
 		applog(LOG_WARNING, "Pool: %s", pools[0]->rpc_url);
 	applog(LOG_WARNING, "Runtime: %d hrs : %d mins : %d secs", hours, mins, secs);
 	displayed_hashes = total_mhashes_done / total_secs;
-	if (displayed_hashes < 1) {
-		displayed_hashes *= 1000;
-		mhash_base = false;
-	}
 
-	applog(LOG_WARNING, "Average hashrate: %.1f %shash/s", displayed_hashes, mhash_base? "Mega" : "Kilo");
+	applog(LOG_WARNING, "Average hashrate: %.1f Mhash/s", displayed_hashes);
 	applog(LOG_WARNING, "Solved blocks: %d", found_blocks);
 	applog(LOG_WARNING, "Best share difficulty: %s", best_share);
 	applog(LOG_WARNING, "Share submissions: %"PRId64, total_accepted + total_rejected);
