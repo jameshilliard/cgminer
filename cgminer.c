@@ -6152,7 +6152,7 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 	}
 	if(local_mhashes_done_count > CG_LOCAL_MHASHES_MAX_NUM/2) {
 		local_mhashes_done = local_mhashes_done_avg / local_mhashes_done_count;
-                print =  true;
+        print =  true;
 	} else {
 		local_mhashes_done = hashes_done;
 	}
@@ -7556,10 +7556,16 @@ void inc_work_stats(struct thr_info *thr, struct pool *pool, int diff1)
 	mutex_lock(&stats_lock);
 	total_diff1 += diff1;
 	thr->cgpu->diff1 += diff1;
-	if(pool) pool->diff1 += diff1;
+	if(pool) {
+		pool->diff1 += diff1;
+	} else {
+		pool = current_pool();
+		pool->diff1 += diff1;
+	}
 	thr->cgpu->last_device_valid_work = time(NULL);
 	mutex_unlock(&stats_lock);
 }
+
 
 /* To be used once the work has been tested to be meet diff1 and has had its
  * nonce adjusted. Returns true if the work target is met. */
