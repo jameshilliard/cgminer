@@ -1440,7 +1440,7 @@ static void *bitmain_get_results(void *userdata)
 		ret = bitmain_read(bitmain, buf, rsize, BITMAIN_READ_TIMEOUT, C_BITMAIN_READ);
 		//applog(LOG_DEBUG, "======stop bitmain_get_results bitmain_read=%d", ret);
 
-		if (ret < 1 || ret == 18) {
+		if ((ret < 1) || (ret == 18)) {
 			errorcount++;
 #ifdef WIN32
 			if(errorcount > 200) {
@@ -1455,7 +1455,8 @@ static void *bitmain_get_results(void *userdata)
 				errorcount = 0;
 			}
 #endif
-			continue;
+			if(ret < 1)
+				continue;
 		}
 
 		if (opt_debug) {
