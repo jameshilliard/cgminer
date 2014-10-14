@@ -1976,6 +1976,37 @@ static bool parse_diff(struct pool *pool, json_t *val)
 	return true;
 }
 
+static bool parse_extranonce(struct pool *pool, json_t *val)
+{
+   char s[RBUFSIZE], *nonce1;
+   int n2size;
+
+   nonce1 = json_array_string(val, 0);
+   if (!nonce1) {
+     return false;
+   }
+   n2size = json_integer_value(json_array_get(val, 1));
+   if (!n2size) {
+     free(nonce1);
+     return false;
+   }
+
+   cg_wlock(&pool->data_lock);
+   pool->nonce1 = nonce1;
+   pool->n1_len = strlen(nonce1) / 2;
+   free(pool->nonce1bin);
+   pool->nonce1bin = (unsigned char *)calloc(pool->n1_len, 1);
+   if (unlikely(!pool->nonce1bin))
+     quithere(1, "Failed to calloc pool->nonce1bin");
+   hex2bin(pool->nonce1bin, pool->nonce1, pool->n1_len);
+   pool->n2size = n2size;
+   cg_wunlock(&pool->data_lock);
+
+   applog(LOG_NOTICE, "Extranonce change requested by pool %d", pool->pool_no);
+
+   return true;
+}
+
 static void __suspend_stratum(struct pool *pool)
 {
 	clear_sockbuf(pool);
@@ -2122,6 +2153,12 @@ bool parse_method(struct pool *pool, char *s)
 		goto out_decref;
 	}
 
+	if (!strncasecmp(buf, "mining.set_extranonce", 21) && parse_extranonce(pool, params)) {
+	    ret = true;
+	    json_decref(val);
+	    return ret;
+    }
+
 	if (!strncasecmp(buf, "client.reconnect", 16)) {
 		ret = parse_reconnect(pool, params);
 		goto out_decref;
@@ -2141,6 +2178,80 @@ out_decref:
 out:
 	return ret;
 }
+
+bool subscribe_extranonce(struct pool *pool)
+{
+  json_t *val = NULL, *res_val, *err_val;
+  char s[RBUFSIZE], *sret = NULL;
+  json_error_t err;
+  bool ret = false;
+
+  sprintf(s, "{\"id\": %d, \"method\": \"mining.extranonce.subscribe\", \"params\": []}",
+    swork_id++);
+
+  if (!stratum_send(pool, s, strlen(s)))
+    return ret;
+
+  /* Parse all data in the queue and anything left should be the response */
+  while (42) {
+    if (!socket_full(pool, DEFAULT_SOCKWAIT / 30)) {
+      applog(LOG_DEBUG, "Timed out waiting for response extranonce.subscribe");
+      /* some pool doesnt send anything, so this is normal */
+      ret = true;
+      goto out;
+    }
+
+    sret = recv_line(pool);
+    if (!sret)
+      return ret;
+    if (parse_method(pool, sret))
+      free(sret);
+    else
+      break;
+  }
+
+  val = JSON_LOADS(sret, &err);
+  free(sret);
+  res_val = json_object_get(val, "result");
+  err_val = json_object_get(val, "error");
+
+  if (!res_val || json_is_false(res_val) || (err_val && !json_is_null(err_val)))  {
+    char *ss;
+
+    if (err_val) {
+      ss = __json_array_string(err_val, 1);
+      if (!ss)
+        ss = (char *)json_string_value(err_val);
+      if (ss && (strcmp(ss, "Method 'subscribe' not found for service 'mining.extranonce'") == 0)) {
+        applog(LOG_INFO, "Cannot subscribe to mining.extranonce on pool %d", pool->pool_no);
+        ret = true;
+        goto out;
+      }
+      if (ss && (strcmp(ss, "Unrecognized request provided") == 0)) {
+        applog(LOG_INFO, "Cannot subscribe to mining.extranonce on pool %d", pool->pool_no);
+        ret = true;
+        goto out;
+      }
+      ss = json_dumps(err_val, JSON_INDENT(3));
+    }
+    else
+      ss = strdup("(unknown reason)");
+
+    applog(LOG_INFO, "Pool %d JSON stratum auth failed: %s", pool->pool_no, ss);
+    free(ss);
+
+    goto out;
+  }
+
+  ret = true;
+
+  applog(LOG_INFO, "Stratum extranonce subscribe for pool %d", pool->pool_no);
+
+out:
+  json_decref(val);
+  return ret;
+}
+
 
 bool auth_stratum(struct pool *pool)
 {
@@ -2760,6 +2871,8 @@ bool restart_stratum(struct pool *pool)
 		suspend_stratum(pool);
 	if (!initiate_stratum(pool))
 		goto out;
+	if (pool->extranonce_subscribe && !subscribe_extranonce(pool))
+	    return false;
 	if (!auth_stratum(pool))
 		goto out;
 	ret = true;
@@ -3394,106 +3507,3 @@ void cg_logwork_uint32(struct work *work, uint32_t nonce, bool ok)
 		cg_logwork(work, nonce_bin, ok);
 	}
 }
-
-int tcp_open(char * ip, unsigned short port)
-{
-	int s = -1;
-	struct sockaddr_in serv_addr = {0};
-	int ret = 0;
-	unsigned int on = 1;
-	int error = 0;
-	struct timeval timeout = { 1, 0 };
-	struct timeval start, stop, diff;
-	gettimeofday(&start, 0);
-
-	s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (s < 0) {
-		applog(LOG_ERR, "tcp_open create socket error=%d\r\n", s);
-		return -1;
-	}
-	if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) == -1) {
-		applog(LOG_ERR, "tcp_open set recv timeout error");
-		close(s);
-		return -1;
-	}
-	if (setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) == -1) {
-		applog(LOG_ERR, "tcp_open set send timeout error");
-		close(s);
-		return -1;
-	}
-	memset(&serv_addr, 0, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = inet_addr(ip);
-	serv_addr.sin_port = htons(port);
-
-	ret = -1;
-	while (ret != 0) {
-		ret = connect(s, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-		if (ret == -1) {
-			gettimeofday(&stop, 0);
-			cg_timeval_subtract(&diff, &start, &stop);
-			if (diff.tv_sec > 1) {
-				applog(LOG_ERR, "tcp_open connect error=%d", errno);
-				close(s);
-				return -1;
-			} else {
-				applog(LOG_ERR, "tcp_open connect warning:%d", errno);
-			}
-		} else {
-			return s;
-		}
-		usleep(100000);
-	}
-	return -1;
-}
-
-int tcp_send(int s, unsigned char * data, int datalen)
-{
-	int ret = 0;
-	struct timeval start, stop, diff;
-	gettimeofday(&start, 0);
-	while (1) {
-		ret = send(s, data, datalen, 0);
-		if (ret == -1) {
-			applog(LOG_ERR, "tcp send errno=%d", errno);
-			if (errno != 11) {
-				break;
-			}
-			gettimeofday(&stop, 0);
-			cg_timeval_subtract(&diff, &start, &stop);
-			if (diff.tv_sec > 1) {
-				applog(LOG_ERR, "tcp send timeout");
-				break;
-			}
-		} else {
-			break;
-		}
-	}
-	return ret;
-}
-
-int tcp_recv(int s, unsigned char * buf, int buflen)
-{
-	int ret = 0;
-	struct timeval start, stop, diff;
-	gettimeofday(&start, 0);
-	while (1) {
-		ret = recv(s, buf, buflen, 0);
-		if (ret == -1) {
-			applog(LOG_ERR, "tcp recv errno=%d", errno);
-			if (errno != 11) {
-				break;
-			}
-			gettimeofday(&stop, 0);
-			cg_timeval_subtract(&diff, &start, &stop);
-			if (diff.tv_sec > 1) {
-				applog(LOG_ERR, "tcp recv timeout\n");
-				break;
-			}
-		} else {
-			break;
-		}
-	}
-	return ret;
-}
-

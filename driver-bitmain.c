@@ -1440,7 +1440,7 @@ static void *bitmain_get_results(void *userdata)
 		ret = bitmain_read(bitmain, buf, rsize, BITMAIN_READ_TIMEOUT, C_BITMAIN_READ);
 		//applog(LOG_DEBUG, "======stop bitmain_get_results bitmain_read=%d", ret);
 
-		if (ret < 1) {
+		if (ret < 1 || ret == 18) {
 			errorcount++;
 #ifdef WIN32
 			if(errorcount > 200) {
@@ -1983,6 +1983,8 @@ static bool bitmain_detect_one(const char * devpath)
 	applog(LOG_ERR, "bitmain_detect_one btm init ok");
 
 	bitmain->device_data = calloc(sizeof(struct bitmain_info), 1);
+	/*	make sure initialize successfully*/
+	memset(bitmain->device_data,0,sizeof(struct bitmain_info));	
 	if (unlikely(!(bitmain->device_data)))
 		quit(1, "Failed to calloc bitmain_info data");
 	info = bitmain->device_data;

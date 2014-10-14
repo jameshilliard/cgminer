@@ -388,7 +388,7 @@ static struct pool *currentpool = NULL;
 int total_pools, enabled_pools;
 enum pool_strategy pool_strategy = POOL_FAILOVER;
 int opt_rotate_period;
-static int total_urls, total_users, total_passes, total_userpasses;
+static int total_urls, total_users, total_passes, total_userpasses,total_noextranonce;
 
 static
 #ifndef HAVE_CURSES
@@ -706,6 +706,7 @@ struct pool *add_pool(void)
 	pool->rpc_proxy = NULL;
 	pool->quota = 1;
 	adjust_quota_gcd();
+	pool->extranonce_subscribe = true;
 
 	return pool;
 }
@@ -978,6 +979,21 @@ static char *set_userpass(const char *arg)
 	pool->rpc_pass = strtok(NULL, ":");
 	if (!pool->rpc_pass)
 		pool->rpc_pass = strdup("");
+
+	return NULL;
+}
+
+static char *set_no_extranonce_subscribe(char *arg)
+{
+	struct pool *pool;
+
+	total_noextranonce++;
+	if (total_noextranonce > total_pools)
+		add_pool();
+
+	pool = pools[total_noextranonce - 1];
+	applog(LOG_DEBUG, "Disable extranonce subscribe on %d", pool->pool_no);
+	opt_set_invbool(&pool->extranonce_subscribe);
 
 	return NULL;
 }
@@ -1620,6 +1636,9 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITHOUT_ARG("--no-submit-stale",
 			opt_set_invbool, &opt_submit_stale,
 		        "Don't submit shares if they are detected as stale"),
+	OPT_WITHOUT_ARG("--no-extranonce-subscribe",
+		   	set_no_extranonce_subscribe, NULL,
+		      	"Disable 'extranonce' stratum subscribe"),
 #ifdef USE_BITFURY
 	OPT_WITH_ARG("--osm-led-mode",
 		     set_int_0_to_4, opt_show_intval, &opt_osm_led_mode,
@@ -5211,6 +5230,8 @@ void write_config(FILE *fcfg)
 				pool->rpc_proxy ? "|" : "",
 				json_escape(pool->rpc_url));
 		}
+		if (!pool->extranonce_subscribe)
+			fputs("\n\t\t\"no-extranonce-subscribe\" : true,", fcfg);
 		fprintf(fcfg, "\n\t\t\"user\" : \"%s\",", json_escape(pool->rpc_user));
 		fprintf(fcfg, "\n\t\t\"pass\" : \"%s\"\n\t}", json_escape(pool->rpc_pass));
 		}
@@ -6059,7 +6080,6 @@ static void thread_reportout(struct thr_info *thr)
 static void hashmeter(int thr_id, uint64_t hashes_done)
 {
 	bool showlog = false;
-        bool print  = false;
 	double tv_tdiff;
 	time_t now_t;
 	int diff_t;
@@ -6138,8 +6158,7 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 
 	mutex_lock(&hash_lock);
 	total_mhashes_done += hashes_done;
-
-	g_local_mhashes_dones[g_local_mhashes_index] = hashes_done;
+	if(showlog){		
 	g_local_mhashes_index++;
 	if(g_local_mhashes_index >= CG_LOCAL_MHASHES_MAX_NUM)
 		g_local_mhashes_index = 0;
@@ -6147,20 +6166,26 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 	for(i = 0; i < CG_LOCAL_MHASHES_MAX_NUM; i++) {
 		if(g_local_mhashes_dones[i] >= 0) {
 			local_mhashes_done_avg += g_local_mhashes_dones[i];
+				//applog(LOG_DEBUG, "g_local_mhashes_dones[%d] = %f,%d", i, g_local_mhashes_dones[i],g_local_mhashes_index);
 			local_mhashes_done_count++;
 		}
 	}
-	if(local_mhashes_done_count > CG_LOCAL_MHASHES_MAX_NUM/2) {
+		
+		if(local_mhashes_done_count > 0) {
 		local_mhashes_done = local_mhashes_done_avg / local_mhashes_done_count;
-        print =  true;
 	} else {
 		local_mhashes_done = hashes_done;
 	}
-	decay_time(&total_rolling, local_mhashes_done, tv_tdiff, opt_log_interval);
+		applog(LOG_DEBUG, "local_mhashes_done_avg = %llu,local_mhashes_done_count=%d,tv_tdiff=%f",  local_mhashes_done/opt_log_interval,local_mhashes_done_count,tv_tdiff);
+		
+		decay_time(&total_rolling, local_mhashes_done, opt_log_interval, opt_log_interval);
 	decay_time(&rolling1, hashes_done, tv_tdiff, 60.0);
 	decay_time(&rolling5, hashes_done, tv_tdiff, 300.0);
 	decay_time(&rolling15, hashes_done, tv_tdiff, 900.0);
 	global_hashrate = llround(total_rolling) * 1000000;
+		g_local_mhashes_dones[g_local_mhashes_index] = 0;
+	}
+		g_local_mhashes_dones[g_local_mhashes_index] += hashes_done;
 	total_secs = tdiff(&total_tv_end, &total_tv_start);
 
 	if(total_secs - last_total_secs > 86400) {
@@ -6171,7 +6196,7 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 	} else {
 		last_total_secs = total_secs;
 	}
-	if (showlog && print) {
+	if (showlog) {
 		char displayed_hashes[16], displayed_rolling[16];
 		char displayed_r1[16], displayed_r5[16], displayed_r15[16];
 		uint64_t d64;
@@ -6788,7 +6813,7 @@ retry_stratum:
 		bool init = pool_tset(pool, &pool->stratum_init);
 
 		if (!init) {
-			bool ret = initiate_stratum(pool) && auth_stratum(pool);
+			bool ret = initiate_stratum(pool) && (!pool->extranonce_subscribe || subscribe_extranonce(pool)) && auth_stratum(pool);
 
 			if (ret)
 				init_stratum_threads(pool);
