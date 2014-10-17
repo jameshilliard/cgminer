@@ -76,6 +76,8 @@
 #define BITMAIN_MAX_TEMP_NUM       32
 #define BITMAIN_MAX_FAN_NUM        32
 
+#define BITMAIN_ARRAY_SIZE 16384
+
 #define BITMAIN_SEND_STATUS_TIME   10 //s
 #define BITMAIN_SEND_FULL_SPACE    128
 #endif
@@ -88,6 +90,8 @@
 #define BITMAIN_MAX_CHAIN_NUM      16
 #define BITMAIN_MAX_TEMP_NUM       32
 #define BITMAIN_MAX_FAN_NUM        32
+
+#define BITMAIN_ARRAY_SIZE 16384
 
 #define BITMAIN_SEND_STATUS_TIME   15 //s
 #define BITMAIN_SEND_FULL_SPACE    512
@@ -102,6 +106,8 @@
 #define BITMAIN_MAX_TEMP_NUM       32
 #define BITMAIN_MAX_FAN_NUM        32
 
+#define BITMAIN_ARRAY_SIZE 16384
+
 #define BITMAIN_SEND_STATUS_TIME   15 //s
 #define BITMAIN_SEND_FULL_SPACE    256
 #endif
@@ -114,6 +120,8 @@
 #define BITMAIN_MAX_CHAIN_NUM      16
 #define BITMAIN_MAX_TEMP_NUM       32
 #define BITMAIN_MAX_FAN_NUM        32
+
+#define BITMAIN_ARRAY_SIZE 16384*2
 
 #define BITMAIN_SEND_STATUS_TIME   15 //s
 #define BITMAIN_SEND_FULL_SPACE    512
@@ -291,7 +299,6 @@ struct bitmain_info {
 };
 
 #define BITMAIN_READ_SIZE 12
-#define BITMAIN_ARRAY_SIZE 16384
 
 #define BTM_GETS_ERROR -1
 #define BTM_GETS_OK 0
