@@ -1,6 +1,6 @@
 /*
  * Copyright 2012-2013 Andrew Smith
- * Copyright 2013 Con Kolivas <kernel@kolivas.org>
+ * Copyright 2013-2014 Con Kolivas <kernel@kolivas.org>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -91,6 +91,12 @@
 #define CP210X_VALUE_DATA 0x0303
 #define CP210X_DATA_BAUD 0x0001c200
 
+#define CP210X_SET_LINE_CTL 0x03
+#define CP210X_BITS_DATA_MASK 0x0f00
+#define CP210X_BITS_DATA_8 0x0800
+#define CP210X_BITS_PARITY_MARK 0x0030
+#define CP210X_BITS_PARITY_SPACE 0x0040
+
 
 // For 0x067b:0x2303 Prolific PL2303 - ICA
 #define PL2303_CTRL_DTR 0x01
@@ -151,6 +157,7 @@ enum sub_ident {
 	IDENT_BAM,
 	IDENT_BAS,
 	IDENT_BBF,
+	IDENT_BET,
 	IDENT_BF1,
 	IDENT_BFL,
 	IDENT_BLT,
@@ -297,6 +304,7 @@ struct cg_usb_info {
 	USB_ADD_COMMAND(C_PROGRAMSTATUS2, "ProgramStatus2") \
 	USB_ADD_COMMAND(C_FINALPROGRAMSTATUS, "FinalProgramStatus") \
 	USB_ADD_COMMAND(C_SETCLOCK, "SetClock") \
+	USB_ADD_COMMAND(C_SETPARITY, "SetParity") \
 	USB_ADD_COMMAND(C_REPLYSETCLOCK, "ReplySetClock") \
 	USB_ADD_COMMAND(C_SETVOLT, "SetVolt") \
 	USB_ADD_COMMAND(C_REPLYSETVOLT, "ReplySetVolt") \
@@ -374,6 +382,8 @@ struct cg_usb_info {
 	USB_ADD_COMMAND(C_ATMEL_CLOSE, "AtmelClose") \
 	USB_ADD_COMMAND(C_AVA2_READ, "Ava2Read") \
 	USB_ADD_COMMAND(C_AVA2_WRITE, "Ava2Write") \
+        USB_ADD_COMMAND(C_BET_WRITE, "BlockErupterWrite") \
+        USB_ADD_COMMAND(C_BET_READ, "BlockErupterRead") \
 	USB_ADD_COMMAND(C_BF1_REQINFO, "BF1RequestInfo") \
 	USB_ADD_COMMAND(C_BF1_GETINFO, "BF1GetInfo") \
 	USB_ADD_COMMAND(C_BF1_REQRESET, "BF1RequestReset") \
