@@ -84,6 +84,9 @@ char *curly = ":D";
 #include "driver-spondoolies-sp30.h"
 #endif
 
+#ifdef USE_BLOCK_ERUPTER
+#include "driver-blockerupter.h"
+#endif
 
 #ifdef USE_BITFURY
 #include "driver-bitfury.h"
@@ -160,7 +163,7 @@ bool opt_loginput;
 bool opt_compact;
 const int opt_cutofftemp = 95;
 int opt_log_interval = 5;
-int opt_queue = 9999;
+int opt_queue = 1;
 static int max_queue = 1;
 int opt_scantime = -1;
 int opt_expiry = 120;
@@ -209,6 +212,7 @@ char *opt_api_allow = NULL;
 char *opt_api_groups;
 char *opt_api_description = PACKAGE_STRING;
 int opt_api_port = 4028;
+char *opt_api_host = API_LISTEN_ADDR;
 bool opt_api_listen;
 bool opt_api_mcast;
 char *opt_api_mcast_addr = API_MCAST_ADDR;
@@ -236,6 +240,9 @@ static char *opt_set_avalon_freq;
 static char *opt_set_avalon2_freq;
 static char *opt_set_avalon2_fan;
 static char *opt_set_avalon2_voltage;
+#endif
+#ifdef USE_BLOCKERUPTER
+int opt_bet_clk = 0;
 #endif
 #ifdef USE_HASHRATIO
 #include "driver-hashratio.h"
@@ -1281,6 +1288,9 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITH_ARG("--api-port",
 		     set_int_1_to_65535, opt_show_intval, &opt_api_port,
 		     "Port number of miner API"),
+	OPT_WITH_ARG("--api-host",
+		     opt_set_charp, NULL, &opt_api_host,
+		     "Specify API listen address, default: 0.0.0.0"),
 #ifdef USE_AVALON
 	OPT_WITHOUT_ARG("--avalon-auto",
 			opt_set_bool, &opt_avalon_auto,
@@ -1447,6 +1457,11 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITH_ARG("--bxm-bits",
 		     set_int_0_to_100, opt_show_intval, &opt_bxm_bits,
 		     "Set BXM bits for overclocking"),
+#endif
+#ifdef USE_BLOCKERUPTER
+        OPT_WITH_ARG("--bet-clk",
+                     opt_set_intval, opt_show_intval, &opt_bet_clk,
+                     "Set Block Erupter clock"),
 #endif
 #ifdef HAVE_LIBCURL
 	OPT_WITH_ARG("--btc-address",
@@ -4473,7 +4488,7 @@ void set_work_ntime(struct work *work, int ntime)
  * The macro copy_work() calls this function with an noffset of 0. */
 struct work *copy_work_noffset(struct work *base_work, int noffset)
 {
-	struct work *work = calloc(1, sizeof(struct work));
+	struct work *work = make_work();
 
 	_copy_work(work, base_work, noffset);
 
