@@ -156,6 +156,10 @@ bitstreamsdir = $(bindir)/bitstreams
 dist_bitstreams_DATA = $(top_srcdir)/bitstreams/README
 endif
 
+if HAS_PROXY
+cgminer_SOURCES += driver-proxy.c driver-proxy.h
+endif
+
 if HAS_BLOCKERUPTER
 cgminer_SOURCES += driver-blockerupter.c driver-blockerupter.h
 endif

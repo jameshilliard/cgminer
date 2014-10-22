@@ -1,5 +1,6 @@
 /*
  * Copyright 2013 Luke Dashjr
+ * Copyright 2014 James Hilliard
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -17,8 +18,6 @@
 #include "driver-proxy.h"
 #include "miner.h"
 #include "util.h"
-
-BFG_REGISTER_DRIVER(proxy_drv)
 
 static
 struct proxy_client *proxy_clients;
@@ -130,6 +129,7 @@ void proxy_wlogprint_status(struct cgpu_info *cgpu)
 #endif
 
 struct device_drv proxy_drv = {
+    .drv_id = DRIVER_proxy,
 	.dname = "proxy",
 	.name = "PXY",
 #ifdef HAVE_CURSES

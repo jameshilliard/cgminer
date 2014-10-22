@@ -100,6 +100,10 @@ char *curly = ":D";
 #include "driver-hashfast.h"
 #endif
 
+#ifdef USE_PROXY
+#include "driver-proxy.h"
+#endif
+
 #if defined(USE_ANT_S1) || defined(USE_ANT_S2)
 #include "driver-bitmain.h"
 #endif

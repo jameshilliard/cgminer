@@ -353,6 +353,18 @@ fi
 AM_CONDITIONAL([HAS_MODMINER], [test x$modminer = xyes])
 
 
+proxy="no"
+
+AC_ARG_ENABLE([proxy],
+	[AC_HELP_STRING([--enable-proxy],[Compile support for libevent stratum server(default disabled)])],
+	[proxy=$enableval]
+	)
+if test "x$proxy" = xyes; then
+	AC_DEFINE([USE_PROXY], [1], [Defined to 1 if Proxy support is wanted])
+fi
+AM_CONDITIONAL([HAS_PROXY], [test x$proxy = xyes])
+
+
 sp10="no"
 
 AC_ARG_ENABLE([sp10],
@@ -724,7 +736,13 @@ else
 	echo "  ModMiner.FPGAs.......: Disabled"
 fi
 
-if test "x$avalon$avalon2$bab$bflsc$bitforce$bitfury$blockerupter$hashfast$hashratio$icarus$klondike$knc$modminer$drillbit$minion$cointerra$bitmine_A1$ants1$ants2$sp10$sp30" = xnonononononononononononononononononononono; then
+if test "x$proxy" = xyes; then
+	echo "  Proxy................: Enabled"
+else
+	echo "  Proxy................: Disabled"
+fi
+
+if test "x$avalon$avalon2$bab$bflsc$bitforce$bitfury$blockerupter$hashfast$hashratio$icarus$klondike$knc$modminer$proxy$drillbit$minion$cointerra$bitmine_A1$ants1$ants2$sp10$sp30" = xnonononononononononononononononononononono; then
 	AC_MSG_ERROR([No mining configured in])
 fi
 
