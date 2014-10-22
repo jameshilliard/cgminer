@@ -6174,30 +6174,29 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 	mutex_lock(&hash_lock);
 	total_mhashes_done += hashes_done;
 	if(showlog){		
-	g_local_mhashes_index++;
-	if(g_local_mhashes_index >= CG_LOCAL_MHASHES_MAX_NUM)
-		g_local_mhashes_index = 0;
+		g_local_mhashes_index++;
+		if(g_local_mhashes_index >= CG_LOCAL_MHASHES_MAX_NUM)
+			g_local_mhashes_index = 0;
 
-	for(i = 0; i < CG_LOCAL_MHASHES_MAX_NUM; i++) {
-		if(g_local_mhashes_dones[i] >= 0) {
-			local_mhashes_done_avg += g_local_mhashes_dones[i];
-				//applog(LOG_DEBUG, "g_local_mhashes_dones[%d] = %f,%d", i, g_local_mhashes_dones[i],g_local_mhashes_index);
-			local_mhashes_done_count++;
+		for(i = 0; i < CG_LOCAL_MHASHES_MAX_NUM; i++) {
+			if(g_local_mhashes_dones[i] >= 0) {
+				local_mhashes_done_avg += g_local_mhashes_dones[i];
+					//applog(LOG_DEBUG, "g_local_mhashes_dones[%d] = %f,%d", i, g_local_mhashes_dones[i],g_local_mhashes_index);
+				local_mhashes_done_count++;
+			}
 		}
-	}
-		
-		if(local_mhashes_done_count > 0) {
-		local_mhashes_done = local_mhashes_done_avg / local_mhashes_done_count;
-	} else {
-		local_mhashes_done = hashes_done;
-	}
-	applog(LOG_DEBUG, "local_mhashes_done_avg = %llu,local_mhashes_done_count=%d",  local_mhashes_done/opt_log_interval,local_mhashes_done_count,);
-		
-	decay_time(&total_rolling, local_mhashes_done, opt_log_interval, opt_log_interval);
-	decay_time(&rolling1, local_mhashes_done_avg, 60, 60.0);
-	decay_time(&rolling5, local_mhashes_done_avg*5, 300.0, 300.0);
-	decay_time(&rolling15, local_mhashes_done_avg*15, 900.0, 900.0);
-	global_hashrate = llround(total_rolling) * 1000000;
+			
+			if(local_mhashes_done_count > 0) {
+			local_mhashes_done = local_mhashes_done_avg / local_mhashes_done_count;
+		} else {
+			local_mhashes_done = hashes_done;
+		}
+			
+		decay_time(&total_rolling, local_mhashes_done, opt_log_interval, opt_log_interval);
+		decay_time(&rolling1, local_mhashes_done_avg, 60, 60.0);
+		decay_time(&rolling5, local_mhashes_done_avg*5, 300.0, 300.0);
+		decay_time(&rolling15, local_mhashes_done_avg*15, 900.0, 900.0);
+		global_hashrate = llround(total_rolling) * 1000000;
 		g_local_mhashes_dones[g_local_mhashes_index] = 0;
 	}
 		g_local_mhashes_dones[g_local_mhashes_index] += hashes_done;
