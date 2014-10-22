@@ -6191,12 +6191,12 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 	} else {
 		local_mhashes_done = hashes_done;
 	}
-		applog(LOG_DEBUG, "local_mhashes_done_avg = %llu,local_mhashes_done_count=%d,tv_tdiff=%f",  local_mhashes_done/opt_log_interval,local_mhashes_done_count,tv_tdiff);
+	applog(LOG_DEBUG, "local_mhashes_done_avg = %llu,local_mhashes_done_count=%d",  local_mhashes_done/opt_log_interval,local_mhashes_done_count,);
 		
-		decay_time(&total_rolling, local_mhashes_done, opt_log_interval, opt_log_interval);
-	decay_time(&rolling1, hashes_done, tv_tdiff, 60.0);
-	decay_time(&rolling5, hashes_done, tv_tdiff, 300.0);
-	decay_time(&rolling15, hashes_done, tv_tdiff, 900.0);
+	decay_time(&total_rolling, local_mhashes_done, opt_log_interval, opt_log_interval);
+	decay_time(&rolling1, local_mhashes_done_avg, 60, 60.0);
+	decay_time(&rolling5, local_mhashes_done_avg*5, 300.0, 300.0);
+	decay_time(&rolling15, local_mhashes_done_avg*15, 900.0, 900.0);
 	global_hashrate = llround(total_rolling) * 1000000;
 		g_local_mhashes_dones[g_local_mhashes_index] = 0;
 	}
