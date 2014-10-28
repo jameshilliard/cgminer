@@ -121,6 +121,11 @@ char *WSAErrorMsg(void) {
 }
 #endif
 
+#if defined(__APPLE__)
+#define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
+#define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
+#endif
+
 static const char *UNAVAILABLE = " - API will not be available";
 static const char *MUNAVAILABLE = " - API multicast listener will not be available";
 
@@ -4571,6 +4576,7 @@ static void setup_ipaccess()
 					ipaccess[ips].mask.s6_addr[i] = 0xff;
 			else {
 				slash = end--;
+				ipv6 = false;
 				if (*ptr == '[' && *end == ']') {
 					*(ptr++) = '\0';
 					*(end--) = '\0';
