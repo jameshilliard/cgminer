@@ -1161,7 +1161,7 @@ static void bitmain_parse_results(struct cgpu_info *bitmain, struct bitmain_info
 					if(asicnum > 0) {
 						if(info->chain_asic_num[n] < 32 || mod == 0) {
 							for(m = asicnum-1; m >= 0; m--) {
-								for(r = (32-mod); r < 32; r++) {
+								for(r = mod; r < 32; r++) {
 									if((r-mod)%8 == 0 && (r-mod) != 0) {
 										info->chain_asic_status_t[n][j] = ' ';
 										j++;
@@ -1622,7 +1622,7 @@ static int bitmain_initialize(struct cgpu_info *bitmain)
 							if(asicnum > 0) {
 								if(info->chain_asic_num[i] < 32 || mod == 0) {
 									for(m = asicnum-1; m >= 0; m--) {
-										for(r = (32-mod); r < 32; r++) {
+										for(r = mod; r < 32; r++) {
 											if((r-mod)%8 == 0 && (r-mod) != 0) {
 												info->chain_asic_status_t[i][j] = ' ';
 												j++;
