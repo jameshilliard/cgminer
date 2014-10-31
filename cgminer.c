@@ -395,7 +395,7 @@ static struct pool *currentpool = NULL;
 int total_pools, enabled_pools;
 enum pool_strategy pool_strategy = POOL_FAILOVER;
 int opt_rotate_period;
-static int total_urls, total_users, total_passes, total_userpasses,total_noextranonce;
+static int total_urls, total_users, total_passes, total_userpasses;
 
 static
 #ifndef HAVE_CURSES
@@ -713,7 +713,6 @@ struct pool *add_pool(void)
 	pool->rpc_proxy = NULL;
 	pool->quota = 1;
 	adjust_quota_gcd();
-	pool->extranonce_subscribe = true;
 
 	return pool;
 }
@@ -986,21 +985,6 @@ static char *set_userpass(const char *arg)
 	pool->rpc_pass = strtok(NULL, ":");
 	if (!pool->rpc_pass)
 		pool->rpc_pass = strdup("");
-
-	return NULL;
-}
-
-static char *set_no_extranonce_subscribe(char *arg)
-{
-	struct pool *pool;
-
-	total_noextranonce++;
-	if (total_noextranonce > total_pools)
-		add_pool();
-
-	pool = pools[total_noextranonce - 1];
-	applog(LOG_DEBUG, "Disable extranonce subscribe on %d", pool->pool_no);
-	opt_set_invbool(&pool->extranonce_subscribe);
 
 	return NULL;
 }
@@ -1651,9 +1635,6 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITHOUT_ARG("--no-submit-stale",
 			opt_set_invbool, &opt_submit_stale,
 		        "Don't submit shares if they are detected as stale"),
-	OPT_WITHOUT_ARG("--no-extranonce-subscribe",
-		   	set_no_extranonce_subscribe, NULL,
-		      	"Disable 'extranonce' stratum subscribe"),
 #ifdef USE_BITFURY
 	OPT_WITH_ARG("--osm-led-mode",
 		     set_int_0_to_4, opt_show_intval, &opt_osm_led_mode,
@@ -5245,8 +5226,6 @@ void write_config(FILE *fcfg)
 				pool->rpc_proxy ? "|" : "",
 				json_escape(pool->rpc_url));
 		}
-		if (!pool->extranonce_subscribe)
-			fputs("\n\t\t\"no-extranonce-subscribe\" : true,", fcfg);
 		fprintf(fcfg, "\n\t\t\"user\" : \"%s\",", json_escape(pool->rpc_user));
 		fprintf(fcfg, "\n\t\t\"pass\" : \"%s\"\n\t}", json_escape(pool->rpc_pass));
 		}
@@ -6827,7 +6806,7 @@ retry_stratum:
 		bool init = pool_tset(pool, &pool->stratum_init);
 
 		if (!init) {
-			bool ret = initiate_stratum(pool) && (!pool->extranonce_subscribe || subscribe_extranonce(pool)) && auth_stratum(pool);
+			bool ret = initiate_stratum(pool) && auth_stratum(pool);
 
 			if (ret)
 				init_stratum_threads(pool);
