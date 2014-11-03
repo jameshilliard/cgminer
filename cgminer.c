@@ -1528,7 +1528,7 @@ static struct opt_table opt_config_table[] = {
 #endif
 #ifdef USE_HASHRATIO
 	OPT_WITH_CBARG("--hro-freq",
-		       set_hashratio_freq, opt_show_intval, &opt_hashratio_freq,
+		       set_hashratio_freq, NULL, &opt_hashratio_freq,
 		       "Set the hashratio clock frequency"),
 #endif
 	OPT_WITH_ARG("--hotplug",
@@ -5210,7 +5210,7 @@ void write_config(FILE *fcfg)
 	/* Write pool values */
 	fputs("{\n\"pools\" : [", fcfg);
 	for(i = 0; i < total_pools; i++) {
-		struct pool *pool = pools[i];
+		struct pool *pool = priority_pool(i);
 
 		if (pool->quota != 1) {
 			fprintf(fcfg, "%s\n\t{\n\t\t\"quota\" : \"%s%s%s%d;%s\",", i > 0 ? "," : "",
@@ -6470,8 +6470,10 @@ static void *stratum_rthread(void *userdata)
 		fd_set rd;
 		char *s;
 
-		if (unlikely(pool->removed))
+		if (unlikely(pool->removed)) {
+			suspend_stratum(pool);
 			break;
+		}
 
 		/* Check to see whether we need to maintain this connection
 		 * indefinitely or just bring it up when we switch to this
@@ -9351,8 +9353,10 @@ void fill_device_drv(struct device_drv *drv)
 		drv->queue_full = &noop_queue_full;
 	if (!drv->zero_stats)
 		drv->zero_stats = &noop_zero_stats;
+	/* If drivers support internal diff they should set a max_diff or
+	 * we will assume they don't and set max to 1. */
 	if (!drv->max_diff)
-		drv->max_diff = 0xffffffffull;
+		drv->max_diff = 1;
 }
 
 void null_device_drv(struct device_drv *drv)
