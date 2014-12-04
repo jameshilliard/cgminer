@@ -520,6 +520,7 @@ struct cgpu_info {
 	time_t last_share_pool_time;
 	double last_share_diff;
 	time_t last_device_valid_work;
+	uint32_t last_nonce;
 
 	time_t device_last_well;
 	time_t device_last_not_well;
@@ -1032,6 +1033,8 @@ extern bool opt_restart;
 extern char *opt_icarus_options;
 extern char *opt_icarus_timing;
 extern float opt_anu_freq;
+extern float opt_au3_freq;
+extern int opt_au3_volt;
 extern float opt_rock_freq;
 #endif
 extern bool opt_worktime;
@@ -1643,7 +1646,8 @@ extern void dupalloc(struct cgpu_info *cgpu, int timelimit);
 extern void dupcounters(struct cgpu_info *cgpu, uint64_t *checked, uint64_t *dups);
 extern bool isdupnonce(struct cgpu_info *cgpu, struct work *work, uint32_t nonce);
 
+#if defined(USE_BITMAIN) || defined(USE_BMSC)
 extern void rev(unsigned char *s, size_t l);
 extern int check_asicnum(int asic_num, unsigned char nonce);
-
+#endif
 #endif /* __MINER_H__ */

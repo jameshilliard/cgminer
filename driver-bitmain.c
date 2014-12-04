@@ -443,8 +443,9 @@ static bool get_option_voltage(uint8_t * voltage, char * voltage_t)
 {
 	if(opt_bitmain_voltage) {
 		if(strlen(opt_bitmain_voltage) > 4 || strlen(opt_bitmain_voltage)%2 != 0 || strlen(opt_bitmain_voltage)/2 == 0) {
-			quit(1, "Invalid bitmain-voltage for voltage data, must be hex now: %s",
-					opt_bitmain_voltage);
+			applog(LOG_ERR, "Invalid bitmain-voltage for voltage data, must be hex now: %s,set default_volttage",
+				opt_bitmain_voltage);
+			return false;
 		}
 		memset(voltage, 0, 2);
 		if(!hex2bin(voltage, opt_bitmain_voltage, strlen(opt_bitmain_voltage)/2)) {

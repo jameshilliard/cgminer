@@ -226,7 +226,9 @@ static bool no_work;
 #ifdef USE_ICARUS
 char *opt_icarus_options = NULL;
 char *opt_icarus_timing = NULL;
-float opt_anu_freq = 200;
+float opt_anu_freq = 250;
+float opt_au3_freq = 225;
+int opt_au3_volt = 750;
 float opt_rock_freq = 270;
 #endif
 bool opt_worktime;
@@ -1136,6 +1138,18 @@ static char *set_float_125_to_500(const char *arg, float *i)
 	return NULL;
 }
 
+static char *set_float_100_to_250(const char *arg, float *i)
+{
+	char *err = opt_set_floatval(arg, i);
+
+	if (err)
+		return err;
+
+	if (*i < 100 || *i > 250)
+		return "Value out of range";
+
+	return NULL;
+}
 static char *set_version_path(const char *arg)
 {
 	opt_set_charp(arg, &opt_version_path);
@@ -1219,26 +1233,27 @@ static struct opt_table opt_config_table[] = {
 #ifdef USE_ICARUS
 	OPT_WITH_ARG("--anu-freq",
 		     set_float_125_to_500, &opt_show_floatval, &opt_anu_freq,
-		     "Set AntminerU1 frequency in MHz, range 125-500"),
+		     "Set AntminerU1/2 frequency in MHz, range 125-500"),
 #endif
+
 	OPT_WITH_ARG("--version-file",
-			 set_version_path, NULL, NULL,
+			 set_version_path, NULL, opt_hidden,
 		     "Set miner version file"),
-	OPT_WITH_ARG("--logfile",
-			set_logfile_path, NULL, NULL,
-			"Set log file, default: cgminer.log"),
 	OPT_WITH_ARG("--logfile-openflag",
-			set_logfile_openflag, NULL, NULL,
+			set_logfile_openflag, NULL, opt_hidden,
 			"Set log file open flag, default: a+"),
 	OPT_WITH_ARG("--logwork",
-			set_logwork_path, NULL, NULL,
+			set_logwork_path, NULL, opt_hidden,
 			"Set log work file path, following: minertext"),
 	OPT_WITH_ARG("--logwork-asicnum",
-			set_logwork_asicnum, NULL, NULL,
+			set_logwork_asicnum, NULL, opt_hidden,
 			"Set log work asic num, following: 1, 32, 64"),
 	OPT_WITHOUT_ARG("--logwork-diff",
 			opt_set_bool, &opt_logwork_diff,
 			"Allow log work diff"),
+	OPT_WITH_ARG("--logfile",
+				set_logfile_path, NULL, opt_hidden,
+				"Set log file, default: cgminer.log"),	
 	OPT_WITH_ARG("--api-allow",
 		     opt_set_charp, NULL, &opt_api_allow,
 		     "Allow API access only to the given list of [G:]IP[/Prefix] addresses[/subnets]"),
@@ -1275,6 +1290,14 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITH_ARG("--api-host",
 		     opt_set_charp, NULL, &opt_api_host,
 		     "Specify API listen address, default: 0.0.0.0"),
+#ifdef USE_ICARUS
+	OPT_WITH_ARG("--au3-freq",
+		     set_float_100_to_250, &opt_show_floatval, &opt_au3_freq,
+		     "Set AntminerU3 frequency in MHz, range 100-250"),
+	OPT_WITH_ARG("--au3-volt",
+		     set_int_0_to_9999, &opt_show_intval, &opt_au3_volt,
+		     "Set AntminerU3 voltage in mv, range 725-850, 0 to not set"),
+#endif
 #ifdef USE_AVALON
 	OPT_WITHOUT_ARG("--avalon-auto",
 			opt_set_bool, &opt_avalon_auto,
@@ -5265,7 +5288,8 @@ void write_config(FILE *fcfg)
 			}
 
 			if (opt->type & OPT_HASARG &&
-			    ((void *)opt->cb_arg == (void *)set_float_125_to_500)) {
+			    (((void *)opt->cb_arg == (void *)set_float_125_to_500) ||
+			     (void *)opt->cb_arg == (void *)set_float_100_to_250)) {
 				fprintf(fcfg, ",\n\"%s\" : \"%.1f\"", p+2, *(float *)opt->u.arg);
 				continue;
 			}
@@ -6256,8 +6280,6 @@ static bool parse_stratum_response(struct pool *pool, char *s)
 	}
 
 	res_val = json_object_get(val, "result");
-	if (!res_val)
-		goto out;
 	err_val = json_object_get(val, "error");
 	id_val = json_object_get(val, "id");
 
@@ -6289,6 +6311,8 @@ static bool parse_stratum_response(struct pool *pool, char *s)
 	if (!sshare) {
 		double pool_diff;
 
+		if (!res_val)
+			goto out;
 		/* Since the share is untracked, we can only guess at what the
 		 * work difficulty is based on the current pool diff. */
 		cg_rlock(&pool->data_lock);
@@ -6564,6 +6588,8 @@ out:
 static void *stratum_sthread(void *userdata)
 {
 	struct pool *pool = (struct pool *)userdata;
+	uint64_t last_nonce2 = 0;
+	uint32_t last_nonce = 0;
 	char threadname[16];
 
 	pthread_detach(pthread_self());
@@ -6599,6 +6625,21 @@ static void *stratum_sthread(void *userdata)
 			continue;
 		}
 
+		nonce = *((uint32_t *)(work->data + 76));
+		nonce2_64 = (uint64_t *)nonce2;
+		*nonce2_64 = htole64(work->nonce2);
+		/* Filter out duplicate shares */
+		if (unlikely(nonce == last_nonce && *nonce2_64 == last_nonce2)) {
+			applog(LOG_INFO, "Filtering duplicate share to pool %d",
+			       pool->pool_no);
+			free_work(work);
+			continue;
+		}
+		last_nonce = nonce;
+		last_nonce2 = *nonce2_64;
+		__bin2hex(noncehex, (const unsigned char *)&nonce, 4);
+		__bin2hex(nonce2hex, nonce2, work->nonce2_len);
+
 		sshare = calloc(sizeof(struct stratum_share), 1);
 		hash32 = (uint32_t *)work->hash;
 		submitted = false;
@@ -6606,18 +6647,12 @@ static void *stratum_sthread(void *userdata)
 		sshare->sshare_time = time(NULL);
 		/* This work item is freed in parse_stratum_response */
 		sshare->work = work;
-		nonce = *((uint32_t *)(work->data + 76));
-		__bin2hex(noncehex, (const unsigned char *)&nonce, 4);
 		memset(s, 0, 1024);
 
 		mutex_lock(&sshare_lock);
 		/* Give the stratum share a unique id */
 		sshare->id = swork_id++;
 		mutex_unlock(&sshare_lock);
-
-		nonce2_64 = (uint64_t *)nonce2;
-		*nonce2_64 = htole64(work->nonce2);
-		__bin2hex(nonce2hex, nonce2, work->nonce2_len);
 
 		snprintf(s, sizeof(s),
 			"{\"params\": [\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"], \"id\": %d, \"method\": \"mining.submit\"}",
@@ -7609,10 +7644,26 @@ bool submit_tested_work(struct thr_info *thr, struct work *work)
 	return true;
 }
 
-/* Returns true if nonce for work was a valid share */
+/* Rudimentary test to see if cgpu has returned the same nonce twice in a row which is
+ * always going to be a duplicate which should be reported as a hw error. */
+static bool new_nonce(struct thr_info *thr, uint32_t nonce)
+{
+	struct cgpu_info *cgpu = thr->cgpu;
+
+	if (unlikely(cgpu->last_nonce == nonce)) {
+		applog(LOG_INFO, "%s %d duplicate share detected as HW error",
+		       cgpu->drv->name, cgpu->device_id);
+		return false;
+	}
+	cgpu->last_nonce = nonce;
+	return true;
+}
+
+/* Returns true if nonce for work was a valid share and not a dupe of the very last
+ * nonce submitted by this device. */
 bool submit_nonce(struct thr_info *thr, struct work *work, uint32_t nonce)
 {
-	if (test_nonce(work, nonce))
+	if (new_nonce(thr, nonce) && test_nonce(work, nonce))
 		submit_tested_work(thr, work);
 	else {
 		inc_hw_errors(thr);

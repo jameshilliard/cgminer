@@ -23,7 +23,7 @@ to the next.
       
 For bitmain mode:
       autoreconf -fvi
-      CFLAGS="-O2 -msse2" ./configure --enable-bmsc --enable-bitmain
+      CFLAGS="-O2 -msse2" ./configure --enable-bmsc 
       make
 
 **************************************************************************************
@@ -40,6 +40,7 @@ For bitmain mode:
 --enable-scrypt         Compile support for scrypt litecoin mining (default disabled)
 --without-curses        Compile support for curses TUI (default enabled)
 --without-libudev       Autodetect FPGAs using libudev (default enabled)
+--enable-forcecombo     Allow combinations of drivers not intended to be built together(default disabled)
 
 **************************************************************************************
 * Run cgminer for bitmain mode                                                       *

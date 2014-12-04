@@ -1,8 +1,8 @@
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 m4_define([v_maj], [4])
-m4_define([v_min], [7])
-m4_define([v_mic], [1])
+m4_define([v_min], [8])
+m4_define([v_mic], [0])
 ##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##--##
 m4_define([v_ver], [v_maj.v_min.v_mic])
 m4_define([lt_rev], m4_eval(v_maj + v_min))
@@ -133,6 +133,7 @@ AC_ARG_ENABLE([bmsc],
 if test "x$bmsc" = xyes; then
 	AC_DEFINE([USE_BMSC], [1], [Defined to 1 if Bitmain Single Chain support is wanted])
 	drivercount=x$drivercount
+	standalone="yes"
 fi
 AM_CONDITIONAL([HAS_BMSC], [test x$bmsc = xyes])
 
@@ -146,6 +147,7 @@ AC_ARG_ENABLE([bitmain],
 if test "x$bitmain" = xyes; then
 	AC_DEFINE([USE_BITMAIN], [1], [Defined to 1 if Bitmain Multi Chain support is wanted])
 	drivercount=x$drivercount
+	standalone="yes"
 fi
 AM_CONDITIONAL([HAS_BITMAIN], [test x$bitmain = xyes])
 
@@ -403,6 +405,16 @@ if test "x$sp30" = xyes; then
 fi
 AM_CONDITIONAL([HAS_SP30], [test x$sp30 = xyes])
 
+
+forcecombo="no"
+
+AC_ARG_ENABLE([forcecombo],
+	[AC_HELP_STRING([--enable-forcecombo],[Allow combinations of drivers not intended to be built together(default disabled)])],
+	[forcecombo=$enableval]
+	)
+if test "x$forcecombo" = xyes; then
+	standalone="no"
+fi
 
 curses="auto"
 
@@ -754,12 +766,16 @@ fi
 
 #Add any new device to this, along with a no on the end of the test
 if test "x$avalon$avalon2$bab$bflsc$bitforce$bitfury$blockerupter$hashfast$hashratio$icarus$klondike$knc$modminer$drillbit$minion$cointerra$bitmine_A1$bmsc$bitmain$sp10$sp30" = xnonononononononononononononononononononono; then
+	echo
 	AC_MSG_ERROR([No mining devices configured in])
+	echo
 fi
 
 if test "x$standalone" = xyes; then
 	if test $drivercount != x; then
+		echo
 		AC_MSG_ERROR([You have configured more than one driver in with a driver that is designed to be standalone only (see ./configure --help)])
+		echo
 	fi
 fi
 
