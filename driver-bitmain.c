@@ -1162,7 +1162,8 @@ static void bitmain_parse_results(struct cgpu_info *bitmain, struct bitmain_info
 						}
 					}
 					if(asicnum > 0) {
-						if(info->chain_asic_num[n] < 32 || mod == 0) {
+					//S1/S2
+						if(mod == 0) {
 							for(m = asicnum-1; m >= 0; m--) {
 								for(r = mod; r < 32; r++) {
 									if((r-mod)%8 == 0 && (r-mod) != 0) {
@@ -1184,7 +1185,33 @@ static void bitmain_parse_results(struct cgpu_info *bitmain, struct bitmain_info
 								info->chain_asic_status_t[n][j] = ' ';
 								j++;
 							}
+						}
+						//S3/S5
+						else if(info->chain_asic_num[n] < 32 ) {
+							for(m = asicnum-1; m >= 0; m--) {
+								for(r = (32-mod); r < 32; r++) {
+									if(r%8 == 0 && (r-mod) != 0) {
+										info->chain_asic_status_t[n][j] = ' ';
+										j++;
+									}
+									checkbit = num2bit(r);
+									if(rxstatusdata.chain_asic_exist[n*8+m] & checkbit) {
+										if(rxstatusdata.chain_asic_status[n*8+m] & checkbit) {
+											info->chain_asic_status_t[n][j] = 'o';
+										} else {
+											info->chain_asic_status_t[n][j] = 'x';
+										}
 						} else {
+										info->chain_asic_status_t[n][j] = '-';
+									}
+									j++;
+								}
+								info->chain_asic_status_t[n][j] = ' ';
+								j++;
+							}
+						}
+						//S4
+						else {
 							for(m = asicnum-1; m >= 0; m--) {
 								if(m == asicnum-1) {
 									for(r = (32-mod); r < 32; r++) {
@@ -1623,7 +1650,8 @@ static int bitmain_initialize(struct cgpu_info *bitmain)
 								}
 							}
 							if(asicnum > 0) {
-								if(info->chain_asic_num[i] < 32 || mod == 0) {
+								/* asic stats for S1/S2 */
+								if(mod == 0) {
 									for(m = asicnum-1; m >= 0; m--) {
 										for(r = mod; r < 32; r++) {
 											if((r-mod)%8 == 0 && (r-mod) != 0) {
@@ -1645,7 +1673,32 @@ static int bitmain_initialize(struct cgpu_info *bitmain)
 										info->chain_asic_status_t[i][j] = ' ';
 										j++;
 									}
+								}
+								/*  asic stats for S3/S5 */
+								else if(info->chain_asic_num[i] < 32) {
+									for(m = asicnum-1; m >= 0; m--) {
+										for(r = (32-mod); r < 32; r++) {
+											if(r%8 == 0 && (r-mod) != 0) {
+												info->chain_asic_status_t[i][j] = ' ';
+												j++;
+											}
+											checkbit = num2bit(r);
+											if(rxstatusdata.chain_asic_exist[i*8+m] & checkbit) {
+												if(rxstatusdata.chain_asic_status[i*8+m] & checkbit) {
+													info->chain_asic_status_t[i][j] = 'o';
+												} else {
+													info->chain_asic_status_t[i][j] = 'x';
+												}
+											} else {
+												info->chain_asic_status_t[i][j] = '-';
+											}
+											j++;
+										}
+										info->chain_asic_status_t[i][j] = ' ';
+										j++;
+									}
 								} else {
+								/* asic stats for S4  */
 									for(m = asicnum-1; m >= 0; m--) {
 										if(m == asicnum-1) {
 											for(r = (32-mod); r < 32; r++) {
