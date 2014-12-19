@@ -856,6 +856,7 @@ static char *set_rr(enum pool_strategy *strategy)
  * stratum+tcp or by detecting a stratum server response */
 bool detect_stratum(struct pool *pool, char *url)
 {
+	check_extranonce_option(pool, url);
 	if (!extract_sockaddr(url, &pool->sockaddr_url, &pool->stratum_port))
 		return false;
 
@@ -6205,7 +6206,7 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
 		g_local_mhashes_dones[g_local_mhashes_index] += hashes_done;
 	total_secs = tdiff(&total_tv_end, &total_tv_start);
 
-	if(total_secs - last_total_secs > 864000) {
+	if(total_secs - last_total_secs > 86400) {
 		applog(LOG_ERR, "cgminer time error total_secs = %d last_total_secs = %d", total_secs, last_total_secs);
 		mutex_unlock(&hash_lock);
 		zero_stats();
@@ -6742,6 +6743,7 @@ static void *longpoll_thread(void *userdata);
 static bool stratum_works(struct pool *pool)
 {
 	applog(LOG_INFO, "Testing pool %d stratum %s", pool->pool_no, pool->stratum_url);
+	check_extranonce_option(pool, pool->stratum_url);
 	if (!extract_sockaddr(pool->stratum_url, &pool->sockaddr_url, &pool->stratum_port))
 		return false;
 
@@ -6849,7 +6851,7 @@ retry_stratum:
 
 		if (!init) {
 			bool ret = initiate_stratum(pool) && auth_stratum(pool);
-
+			extranonce_subscribe_stratum(pool);
 			if (ret)
 				init_stratum_threads(pool);
 			else
@@ -7965,10 +7967,10 @@ struct work *__get_queued(struct cgpu_info *cgpu)
 		work = cgpu->unqueued_work;
 		if (unlikely(stale_work(work, false))) {
 			discard_work(work);
+			wake_gws();
 		} else
 			__add_queued(cgpu, work);
 		cgpu->unqueued_work = NULL;
-		wake_gws();
 	}
 
 	return work;

@@ -550,6 +550,8 @@ static int bitmain_set_txtask(uint8_t * sendbuf,
 	int diff = 0;
 	unsigned int difftmp = 0;
 	unsigned int pooldiff = 0;
+	uint64_t netdifftmp = 0;
+	int netdiff = 0;
 	if (unlikely(!bm)) {
 		applog(LOG_WARNING, "bitmain_set_txtask bitmain_txtask_token is null");
 		return -1;
@@ -624,6 +626,12 @@ static int bitmain_set_txtask(uint8_t * sendbuf,
 		applog(LOG_ERR, "BTM send work count %d", cursendcount);
 		return 0;
 	}
+	
+	netdifftmp = current_diff;
+	while(netdifftmp > 0) {
+		netdifftmp = netdifftmp >> 1;
+		netdiff++;
+	}
 	datalen += 48*cursendcount;
 
 	bm->length = datalen-4;
@@ -633,6 +641,7 @@ static int bitmain_set_txtask(uint8_t * sendbuf,
 	//memcpy(sendbuf+1, &len, 2);
 	bm->new_block = new_block;
 	bm->diff = diff;
+	bm->net_diff = htole16(netdiff);
 
 	sendbuf[4] = htole8(sendbuf[4]);
 
@@ -645,8 +654,8 @@ static int bitmain_set_txtask(uint8_t * sendbuf,
 	crc = htole16(crc);
 	memcpy(sendbuf+datalen-2, &crc, 2);
 
-	applog(LOG_DEBUG, "BitMain TxTask Token: v(%d) new_block(%d) diff(%d pool:%d) work_num(%d) crc(%04x)",
-						version, new_block, diff, pooldiff, cursendcount, crc);
+	applog(LOG_DEBUG, "BitMain TxTask Token: v(%d) new_block(%d) diff(%d pool:%d net:%d) work_num(%d) crc(%04x)",
+						version, new_block, diff, pooldiff,netdiff, cursendcount, crc);
 	applog(LOG_DEBUG, "BitMain TxTask Token: %d %d %02x%02x%02x%02x%02x%02x",
 			datalen, bm->length, sendbuf[0],sendbuf[1],sendbuf[2],sendbuf[3],sendbuf[4],sendbuf[5]);
 
@@ -698,6 +707,7 @@ static int bitmain_parse_rxstatus(const uint8_t * data, int datalen, struct bitm
 	int i = 0, j = 0;
 	int asic_num = 0;
 	int dataindex = 0;
+	uint8_t tmp = 0x01;
 	if (unlikely(!bm)) {
 		applog(LOG_WARNING, "bitmain_parse_rxstatus bitmain_rxstatus_data is null");
 		return -1;
@@ -788,6 +798,17 @@ static int bitmain_parse_rxstatus(const uint8_t * data, int datalen, struct bitm
 	if(bm->fan_num > 0) {
 		memcpy(bm->fan, data+dataindex, bm->fan_num);
 		dataindex += bm->fan_num;
+	}
+	if(!opt_bitmain_checkall){
+		if(tmp != htole8(tmp)){
+			applog(LOG_ERR, "BitMain RxStatus   byte4 0x%02x chip_value_eft %d reserved %d get_blk_num %d ",*((uint8_t* )bm +4),bm->chip_value_eft,bm->reserved1,bm->get_blk_num);
+			memcpy(&tmp,data+4,1);
+			bm->chip_value_eft = tmp >>7;
+			bm->get_blk_num = tmp >> 4;
+			bm->reserved1 = ((tmp << 4) & 0xff) >> 5;
+		}	
+		found_blocks = bm->get_blk_num;	
+		applog(LOG_ERR, "BitMain RxStatus tmp :0x%02x  byte4 0x%02x chip_value_eft %d reserved %d get_blk_num %d ",tmp,*((uint8_t* )bm +4),bm->chip_value_eft,bm->reserved1,bm->get_blk_num);
 	}
 	applog(LOG_DEBUG, "BitMain RxStatusData: chipv_e(%d) chainnum(%d) fifos(%d) v1(%d) v2(%d) v3(%d) v4(%d) fann(%d) tempn(%d) fanet(%04x) tempet(%08x) ne(%d) regvalue(%d) crc(%04x)",
 			bm->chip_value_eft, bm->chain_num, bm->fifo_space, bm->hw_version[0], bm->hw_version[1], bm->hw_version[2], bm->hw_version[3], bm->fan_num, bm->temp_num, bm->fan_exist, bm->temp_exist, bm->nonce_error, bm->reg_value, bm->crc);

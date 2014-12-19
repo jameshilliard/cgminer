@@ -170,7 +170,7 @@ struct bitmain_txtask_token {
 	uint8_t new_block            :1;
 	uint8_t reserved1            :7;
 	uint8_t diff;
-	uint8_t reserved2[2];
+	uint16_t net_diff;
 	struct bitmain_txtask_work works[BITMAIN_MAX_WORK_NUM];
 	uint16_t crc;
 } __attribute__((packed, aligned(4)));
@@ -194,7 +194,8 @@ struct bitmain_rxstatus_data {
 	uint8_t version;
 	uint16_t length;
 	uint8_t chip_value_eft       :1;
-	uint8_t reserved1            :7;
+	uint8_t reserved1            :3;
+	uint8_t get_blk_num          :4;
 	uint8_t chain_num;
 	uint16_t fifo_space;
 	uint8_t hw_version[4];
