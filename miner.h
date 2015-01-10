@@ -1066,6 +1066,7 @@ extern char *opt_bitmain_voltage;
 extern bool opt_bitmain_checkn2diff;
 extern bool opt_bitmain_nobeeper;
 extern bool opt_bitmain_notempoverctrl;
+extern bool opt_bitmain_homemode;
 #endif
 #ifdef USE_BMSC
 extern char *opt_bmsc_options;

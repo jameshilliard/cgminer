@@ -99,6 +99,7 @@ bool opt_bitmain_checkn2diff = false;
 bool opt_bitmain_dev_usb = true;
 bool opt_bitmain_nobeeper = false;
 bool opt_bitmain_notempoverctrl = false;
+bool opt_bitmain_homemode = false;
 int opt_bitmain_temp = BITMAIN_TEMP_TARGET;
 int opt_bitmain_overheat = BITMAIN_TEMP_OVERHEAT;
 int opt_bitmain_fan_min = BITMAIN_DEFAULT_FAN_MIN_PWM;
@@ -466,7 +467,7 @@ static bool get_option_voltage(uint8_t * voltage, char * voltage_t)
 static int bitmain_set_txconfig(struct bitmain_txconfig_token *bm,
 			    uint8_t reset, uint8_t fan_eft, uint8_t timeout_eft, uint8_t frequency_eft,
 			    uint8_t voltage_eft, uint8_t chain_check_time_eft, uint8_t chip_config_eft, uint8_t hw_error_eft,
-			    uint8_t beeper_ctrl, uint8_t temp_over_ctrl,
+			    uint8_t beeper_ctrl, uint8_t temp_over_ctrl,uint8_t fan_home_mode,
 			    uint8_t chain_num, uint8_t asic_num, uint8_t fan_pwm_data, uint8_t timeout_data,
 			    uint16_t frequency, uint8_t * voltage, uint8_t chain_check_time,
 			    uint8_t chip_address, uint8_t reg_address, uint8_t * reg_data)
@@ -504,6 +505,7 @@ static int bitmain_set_txconfig(struct bitmain_txconfig_token *bm,
 	bm->hw_error_eft = hw_error_eft;
 	bm->beeper_ctrl = beeper_ctrl;
 	bm->temp_over_ctrl = temp_over_ctrl;
+	bm->fan_home_mode = fan_home_mode;
 
 	sendbuf[4] = htole8(sendbuf[4]);
 	sendbuf[5] = htole8(sendbuf[5]);
@@ -524,9 +526,9 @@ static int bitmain_set_txconfig(struct bitmain_txconfig_token *bm,
 	crc = CRC16((uint8_t *)bm, datalen-2);
 	bm->crc = htole16(crc);
 
-	applog(LOG_ERR, "BTM TxConfigToken:v(%d) reset(%d) fan_e(%d) tout_e(%d) fq_e(%d) vt_e(%d) chainc_e(%d) chipc_e(%d) hw_e(%d) b_c(%d) t_c(%d) mnum(%d) anum(%d) fanpwmdata(%d) toutdata(%d) freq(%d) volt(%02x%02x) chainctime(%d) regdata(%02x%02x%02x%02x) chipaddr(%02x) regaddr(%02x) crc(%04x)",
+	applog(LOG_ERR, "BTM TxConfigToken:v(%d) reset(%d) fan_e(%d) tout_e(%d) fq_e(%d) vt_e(%d) chainc_e(%d) chipc_e(%d) hw_e(%d) b_c(%d) t_c(%d) f_m(%d) mnum(%d) anum(%d) fanpwmdata(%d) toutdata(%d) freq(%d) volt(%02x%02x) chainctime(%d) regdata(%02x%02x%02x%02x) chipaddr(%02x) regaddr(%02x) crc(%04x)",
 					version, reset, fan_eft, timeout_eft, frequency_eft, voltage_eft,
-					chain_check_time_eft, chip_config_eft, hw_error_eft, beeper_ctrl, temp_over_ctrl, chain_num, asic_num,
+					chain_check_time_eft, chip_config_eft, hw_error_eft, beeper_ctrl, temp_over_ctrl,fan_home_mode,chain_num, asic_num,
 					fan_pwm_data, timeout_data, frequency, voltage[0], voltage[1],
 					chain_check_time, reg_data[0], reg_data[1], reg_data[2], reg_data[3], chip_address, reg_address, crc);
 
@@ -1130,7 +1132,7 @@ static void bitmain_parse_results(struct cgpu_info *bitmain, struct bitmain_info
 	struct bitmain_packet_head packethead;
 	int asicnum = 0;
 	int idiff = 0;
-	int mod = 0;
+	int mod = 0,tmp = 0;
 
 	for (i = 0; i <= spare; i++) {
 		if(buf[i] == 0xa1) {
@@ -1183,60 +1185,10 @@ static void bitmain_parse_results(struct cgpu_info *bitmain, struct bitmain_info
 						}
 					}
 					if(asicnum > 0) {
-					//S1/S2
-						if(mod == 0) {
 							for(m = asicnum-1; m >= 0; m--) {
-								for(r = mod; r < 32; r++) {
-									if((r-mod)%8 == 0 && (r-mod) != 0) {
-										info->chain_asic_status_t[n][j] = ' ';
-										j++;
-									}
-									checkbit = num2bit(r);
-									if(rxstatusdata.chain_asic_exist[n*8+m] & checkbit) {
-										if(rxstatusdata.chain_asic_status[n*8+m] & checkbit) {
-											info->chain_asic_status_t[n][j] = 'o';
-										} else {
-											info->chain_asic_status_t[n][j] = 'x';
-										}
-									} else {
-										info->chain_asic_status_t[n][j] = '-';
-									}
-									j++;
-								}
-								info->chain_asic_status_t[n][j] = ' ';
-								j++;
-							}
-						}
-						//S3/S5
-						else if(info->chain_asic_num[n] < 32 ) {
-							for(m = asicnum-1; m >= 0; m--) {
-								for(r = (32-mod); r < 32; r++) {
-									if(r%8 == 0 && (r-mod) != 0) {
-										info->chain_asic_status_t[n][j] = ' ';
-										j++;
-									}
-									checkbit = num2bit(r);
-									if(rxstatusdata.chain_asic_exist[n*8+m] & checkbit) {
-										if(rxstatusdata.chain_asic_status[n*8+m] & checkbit) {
-											info->chain_asic_status_t[n][j] = 'o';
-										} else {
-											info->chain_asic_status_t[n][j] = 'x';
-										}
-						} else {
-										info->chain_asic_status_t[n][j] = '-';
-									}
-									j++;
-								}
-								info->chain_asic_status_t[n][j] = ' ';
-								j++;
-							}
-						}
-						//S4
-						else {
-							for(m = asicnum-1; m >= 0; m--) {
-								if(m == asicnum-1) {
-									for(r = (32-mod); r < 32; r++) {
-										if((r-mod)%8 == 0 && (r-mod) != 0) {
+							tmp = mod ? (32-mod): 0;
+							for(r = tmp;r < 32;r++){
+								if((r-tmp)%8 == 0 && (r-tmp) !=0){
 											info->chain_asic_status_t[n][j] = ' ';
 											j++;
 										}
@@ -1254,28 +1206,7 @@ static void bitmain_parse_results(struct cgpu_info *bitmain, struct bitmain_info
 									}
 									info->chain_asic_status_t[n][j] = ' ';
 									j++;
-								} else {
-									for(r = 0; r < 32; r++) {
-										if(r%8 == 0 && r != 0) {
-											info->chain_asic_status_t[n][j] = ' ';
-											j++;
-										}
-										checkbit = num2bit(r);
-										if(rxstatusdata.chain_asic_exist[n*8+m] & checkbit) {
-											if(rxstatusdata.chain_asic_status[n*8+m] & checkbit) {
-												info->chain_asic_status_t[n][j] = 'o';
-											} else {
-												info->chain_asic_status_t[n][j] = 'x';
-											}
-										} else {
-											info->chain_asic_status_t[n][j] = '-';
-										}
-										j++;
-									}
-									info->chain_asic_status_t[n][j] = ' ';
-									j++;
-								}
-							}
+								mod = 0;
 						}
 					}
 					applog(LOG_DEBUG, "bitmain_parse_results chain(%d) asic_num=%d asic_exist=%08x%08x%08x%08x%08x%08x%08x%08x asic_status=%08x%08x%08x%08x%08x%08x%08x%08x",
@@ -1581,9 +1512,10 @@ static int bitmain_initialize(struct cgpu_info *bitmain)
 	int hwerror_eft = 0;
 	int beeper_ctrl = 1;
 	int tempover_ctrl = 1;
+	int home_mode = 0;
 	struct bitmain_packet_head packethead;
 	int asicnum = 0;
-	int mod = 0;
+	int mod = 0,tmp = 0;
 
 	/* Send reset, then check for result */
 	if(!bitmain) {
@@ -1671,80 +1603,10 @@ static int bitmain_initialize(struct cgpu_info *bitmain)
 								}
 							}
 							if(asicnum > 0) {
-								/* asic stats for S1/S2 */
-								if(mod == 0) {
 									for(m = asicnum-1; m >= 0; m--) {
-										for(r = mod; r < 32; r++) {
-											if((r-mod)%8 == 0 && (r-mod) != 0) {
-												info->chain_asic_status_t[i][j] = ' ';
-												j++;
-											}
-											checkbit = num2bit(r);
-											if(rxstatusdata.chain_asic_exist[i*8+m] & checkbit) {
-												if(rxstatusdata.chain_asic_status[i*8+m] & checkbit) {
-													info->chain_asic_status_t[i][j] = 'o';
-												} else {
-													info->chain_asic_status_t[i][j] = 'x';
-												}
-											} else {
-												info->chain_asic_status_t[i][j] = '-';
-											}
-											j++;
-										}
-										info->chain_asic_status_t[i][j] = ' ';
-										j++;
-									}
-								}
-								/*  asic stats for S3/S5 */
-								else if(info->chain_asic_num[i] < 32) {
-									for(m = asicnum-1; m >= 0; m--) {
-										for(r = (32-mod); r < 32; r++) {
-											if(r%8 == 0 && (r-mod) != 0) {
-												info->chain_asic_status_t[i][j] = ' ';
-												j++;
-											}
-											checkbit = num2bit(r);
-											if(rxstatusdata.chain_asic_exist[i*8+m] & checkbit) {
-												if(rxstatusdata.chain_asic_status[i*8+m] & checkbit) {
-													info->chain_asic_status_t[i][j] = 'o';
-												} else {
-													info->chain_asic_status_t[i][j] = 'x';
-												}
-											} else {
-												info->chain_asic_status_t[i][j] = '-';
-											}
-											j++;
-										}
-										info->chain_asic_status_t[i][j] = ' ';
-										j++;
-									}
-								} else {
-								/* asic stats for S4  */
-									for(m = asicnum-1; m >= 0; m--) {
-										if(m == asicnum-1) {
-											for(r = (32-mod); r < 32; r++) {
-												if((r-mod)%8 == 0 && (r-mod) != 0) {
-													info->chain_asic_status_t[i][j] = ' ';
-													j++;
-												}
-
-												checkbit = num2bit(r);
-												if(rxstatusdata.chain_asic_exist[i*8+m] & checkbit) {
-													if(rxstatusdata.chain_asic_status[i*8+m] & checkbit) {
-														info->chain_asic_status_t[i][j] = 'o';
-													} else {
-														info->chain_asic_status_t[i][j] = 'x';
-													}
-												} else {
-													info->chain_asic_status_t[i][j] = '-';
-												}
-												j++;
-											}
-											info->chain_asic_status_t[i][j] = ' ';
-											j++;
-										} else {
-											for(r = 0; r < 32; r++) {
-												if(r%8 == 0 && r != 0) {
+									tmp = mod ? (32-mod):0;
+									for(r = tmp;r < 32;r++){
+										if((r-tmp)%8 == 0 && (r-tmp) !=0){
 													info->chain_asic_status_t[i][j] = ' ';
 													j++;
 												}
@@ -1762,8 +1624,7 @@ static int bitmain_initialize(struct cgpu_info *bitmain)
 											}
 											info->chain_asic_status_t[i][j] = ' ';
 											j++;
-										}
-									}
+										mod = 0;
 								}
 							}
 							applog(LOG_DEBUG, "bitmain_initialize chain(%d) asic_num=%d asic_exist=%08x%08x%08x%08x%08x%08x%08x%08x asic_status=%08x%08x%08x%08x%08x%08x%08x%08x",
@@ -1808,7 +1669,11 @@ static int bitmain_initialize(struct cgpu_info *bitmain)
 			tempover_ctrl = 0;
 		else
 			tempover_ctrl = 1;
-		sendlen = bitmain_set_txconfig((struct bitmain_txconfig_token *)sendbuf, 1, 1, 1, 1, 1, 0, 1, hwerror_eft, beeper_ctrl, tempover_ctrl,
+		if(opt_bitmain_homemode)
+			home_mode= 1;
+		else
+			home_mode= 0;
+		sendlen = bitmain_set_txconfig((struct bitmain_txconfig_token *)sendbuf, 1, 1, 1, 1, 1, 0, 1, hwerror_eft, beeper_ctrl, tempover_ctrl,home_mode,
 				info->chain_num, info->asic_num, BITMAIN_DEFAULT_FAN_MAX_PWM, info->timeout,
 				info->frequency, info->voltage, 0, 0, 0x04, info->reg_data);
 		if(sendlen <= 0) {
