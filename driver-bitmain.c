@@ -1438,7 +1438,10 @@ static void *bitmain_get_results(void *userdata)
 			}
 #endif
 			if(ret < 1)
+			{
+				cgsleep_ms(1);	// add by clement : we just wait a little time for RX data...
 				continue;
+		}
 		}
 
 		if (opt_debug) {
@@ -2053,12 +2056,14 @@ static bool bitmain_fill(struct cgpu_info *bitmain)
 	int senderror = 0;
 	struct timeval now;
 	int timediff = 0;
+	int needwait=0;		// add by clement.  use a flag to indicate need sleep or not.
 
 	//applog(LOG_DEBUG, "BTM bitmain_fill start--------");
 	mutex_lock(&info->qlock);
 	if(info->fifo_space <= 0) {
 		//applog(LOG_DEBUG, "BTM bitmain_fill fifo space empty--------");
 		ret = true;
+		needwait=1;	// add by clement. DEVICE FIFO is full, no space for new works. So we need sleep.
 		goto out_unlock;
 	}
 	if (bitmain->queued >= BITMAIN_MAX_WORK_QUEUE_NUM) {
@@ -2080,7 +2085,7 @@ static bool bitmain_fill(struct cgpu_info *bitmain)
 					subid = bitmain->queued++;
 					work->subid = subid;
 					slot = bitmain->work_array + subid;
-					if (slot > BITMAIN_ARRAY_SIZE) {
+					if (slot >= BITMAIN_ARRAY_SIZE) {	// slot=edited by clement , old code is if (slot > BITMAIN_ARRAY_SIZE), not sure ,just fixed it.
 						applog(LOG_DEBUG, "bitmain_fill array cyc %d", BITMAIN_ARRAY_SIZE);
 						slot = 0;
 					}
@@ -2097,11 +2102,17 @@ static bool bitmain_fill(struct cgpu_info *bitmain)
 			}
 		}
 		if(queuednum < BITMAIN_MAX_DEAL_QUEUE_NUM) {
+			/*  by clement
 			if(queuednum < neednum) {
 				applog(LOG_DEBUG, "BTM: No enough work to send, queue num=%d", queuednum);
 				break;
 			}
+			*/
+			
+			needwait=1;	// if queuednum is not enough, we just wait and sleep.  queuednum must be >= BITMAIN_MAX_DEAL_QUEUE_NUM, then send to device
+			break;
 		}
+		
 		sendnum = queuednum < neednum ? queuednum : neednum;
 		sendlen = bitmain_set_txtask(sendbuf, &(info->last_work_block), bitmain->works, BITMAIN_ARRAY_SIZE, bitmain->work_array, sendnum, &sendcount);
 		bitmain->queued -= sendnum;
@@ -2174,10 +2185,20 @@ out_unlock:
 
 	if(info->send_full_space > BITMAIN_SEND_FULL_SPACE) {
 		info->send_full_space = 0;
+		mutex_unlock(&info->qlock);	// add by clement.  we need unlock first, then sleep. So we can let other thread run as soon as possible.
+		
 		ret = true;
-		cgsleep_ms(1);
+		cgsleep_ms(1);	// just sleep a liitle.
 	}
-	mutex_unlock(&info->qlock);
+	else
+	{
+		mutex_unlock(&info->qlock);	// add by clement.  we need unlock first, then sleep. So we can let other thread run as soon as possible.
+		
+		 if(needwait)
+		 	  cgsleep_ms(1);	// add by clement. if there is no work on queue, we need wait for a little time. Or this thread will hold CPU near 99%.
+		 	                    // In fact, we need more time in gen_hash thread!!!
+	}
+		
 	if(senderror) {
 		ret = true;
 		applog(LOG_DEBUG, "bitmain_fill send task sleep");
