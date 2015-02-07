@@ -381,7 +381,7 @@ struct ICARUS_WORK {
 
 #define ANT_U1_DEFFREQ 200
 #define ANT_U3_DEFFREQ 225
-#define ANT_U3_MAXFREQ 250
+#define ANT_U3_MAXFREQ 350
 struct {
 	float freq;
 	uint16_t hex;
@@ -400,6 +400,10 @@ struct {
 	{ 237.5,	0x1286 },
 	{ 243.75,	0x1306 },
 	{ 250,		0x0982 },
+    { 275,		0x0A82 },
+    { 300,		0x0B82 },
+    { 325,		0x0C82 },
+    { 350,		0x0D82 },
 };
 
 #define END_CONDITION 0x0000ffff
