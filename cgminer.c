@@ -261,6 +261,7 @@ char *opt_bitmine_a1_options = NULL;
 char *opt_bitmain_options;
 static char *opt_set_bitmain_fan;
 static char *opt_set_bitmain_freq;
+static char *opt_set_bitmain_voltage;
 #endif
 #ifdef USE_ANT_S2
 char *opt_bitmain_dev;
@@ -1288,6 +1289,9 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITH_CBARG("--bitmain-freq",
 		     set_bitmain_freq, NULL, &opt_set_bitmain_freq,
 		     "Set frequency range for bitmain-auto, single value or range"),
+	OPT_WITH_CBARG("--bitmain-voltage",
+		     set_bitmain_voltage, NULL, &opt_set_bitmain_voltage,
+		     "Set voltage"),
 	OPT_WITHOUT_ARG("--bitmain-hwerror",
 			opt_set_bool, &opt_bitmain_hwerror,
 			"Set bitmain device detect hardware error"),

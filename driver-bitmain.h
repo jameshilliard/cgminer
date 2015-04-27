@@ -47,7 +47,9 @@
 #define BITMAIN_MAX_FREQUENCY 1000000
 #define BITMAIN_TIMEOUT_FACTOR 12690
 #define BITMAIN_DEFAULT_FREQUENCY 282
-#define BITMAIN_DEFAULT_VOLTAGE 5
+#define BITMAIN_DEFAULT_VOLTAGE_T "0725"
+#define BITMAIN_DEFAULT_VOLTAGE0 0x07
+#define BITMAIN_DEFAULT_VOLTAGE1 0x25
 #define BITMAIN_DEFAULT_CHAIN_NUM 8
 #define BITMAIN_DEFAULT_ASIC_NUM 32
 #define BITMAIN_DEFAULT_REG_DATA 0
@@ -126,7 +128,8 @@ struct bitmain_txconfig_token {
 	uint8_t beeper_ctrl          :1;
 	uint8_t temp_over_ctrl       :1;
 	uint8_t reserved1            :6;
-	uint8_t reserved[2];
+	uint8_t chain_check_time;
+	uint8_t reserved2;
 #endif
 
 	uint8_t chain_num;
@@ -135,8 +138,7 @@ struct bitmain_txconfig_token {
 	uint8_t timeout_data;
 
 	uint16_t frequency;
-	uint8_t voltage;
-	uint8_t chain_check_time;
+	uint8_t voltage[2];
 
 	uint8_t reg_data[4];
 	uint8_t chip_address;
@@ -416,6 +418,7 @@ extern int opt_bitmain_freq_max;
 extern bool opt_bitmain_auto;
 extern char *set_bitmain_fan(char *arg);
 extern char *set_bitmain_freq(char *arg);
+extern char *set_bitmain_voltage(char *arg);
 
 #endif /* USE_ANT_S1 || USE_ANT_S2 */
 #endif	/* BITMAIN_H */
