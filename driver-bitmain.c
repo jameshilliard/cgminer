@@ -424,6 +424,27 @@ static bool get_options(int this_option_offset, int *baud, int *chain_num,
 	return true;
 }
 
+char *set_bitmain_freq(char *arg)
+{
+	int val1, val2, ret;
+
+	ret = sscanf(arg, "%d-%d", &val1, &val2);
+	if (ret < 1)
+		return "No values passed to bitmain-freq";
+	if (ret == 1)
+		val2 = val1;
+
+	if (val1 < BITMAIN_MIN_FREQUENCY || val1 > BITMAIN_MAX_FREQUENCY ||
+	    val2 < BITMAIN_MIN_FREQUENCY || val2 > BITMAIN_MAX_FREQUENCY ||
+	    val2 < val1)
+		return "Invalid value passed to bitmain-freq";
+
+	opt_bitmain_freq_min = val1;
+	opt_bitmain_freq_max = val2;
+
+	return NULL;
+}
+
 static bool get_option_freq(int *timeout, int *frequency, char * frequency_t, uint8_t * reg_data)
 {
 	char buf[BUFSIZ+1];
@@ -431,10 +452,10 @@ static bool get_option_freq(int *timeout, int *frequency, char * frequency_t, ui
 	size_t max;
 	int i, tmp;
 
-	if (opt_bitmain_freq == NULL)
+	if (set_bitmain_freq == NULL)
 		return true;
 	else {
-		ptr = opt_bitmain_freq;
+		ptr = set_bitmain_freq;
 
 		comma = strchr(ptr, ',');
 		if (comma == NULL)
@@ -3051,27 +3072,6 @@ char *set_bitmain_fan(char *arg)
 
 	opt_bitmain_fan_min = val1 * BITMAIN_PWM_MAX / 100;
 	opt_bitmain_fan_max = val2 * BITMAIN_PWM_MAX / 100;
-
-	return NULL;
-}
-
-char *set_bitmain_freq(char *arg)
-{
-	int val1, val2, ret;
-
-	ret = sscanf(arg, "%d-%d", &val1, &val2);
-	if (ret < 1)
-		return "No values passed to bitmain-freq";
-	if (ret == 1)
-		val2 = val1;
-
-	if (val1 < BITMAIN_MIN_FREQUENCY || val1 > BITMAIN_MAX_FREQUENCY ||
-	    val2 < BITMAIN_MIN_FREQUENCY || val2 > BITMAIN_MAX_FREQUENCY ||
-	    val2 < val1)
-		return "Invalid value passed to bitmain-freq";
-
-	opt_bitmain_freq_min = val1;
-	opt_bitmain_freq_max = val2;
 
 	return NULL;
 }
