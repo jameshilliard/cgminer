@@ -2,6 +2,7 @@
  * Copyright 2012-2013 Andrew Smith
  * Copyright 2012 Xiangfu <xiangfu@openmobilefree.com>
  * Copyright 2013-2015 Con Kolivas <kernel@kolivas.org>
+ * Copyright 2015 David McKinnon
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -387,9 +388,19 @@ struct {
 	uint16_t hex;
 } u3freqtable[] = {
 	{ 100,		0x0783 },
+	{ 106.25,	0x0803 },
+	{ 112.5,	0x0883 },
+	{ 118.75,	0x0903 },
 	{ 125,		0x0983 },
+	{ 131.25,	0x0a03 },
+	{ 137.5,	0x0a83 },
+	{ 143.75,	0x1687 },
 	{ 150,		0x0b83 },
+	{ 156.25,	0x0c03 },
+	{ 162.5,	0x0c83 },
+	{ 168.75,	0x1a87 },
 	{ 175,		0x0d83 },
+	{ 181.25,	0x0e83 },
 	{ 193.75,	0x0f03 },
 	{ 196.88,	0x1f07 },
 	{ 200,		0x0782 },
@@ -397,14 +408,52 @@ struct {
 	{ 212.5,	0x1086 },
 	{ 218.75,	0x1106 },
 	{ 225,		0x0882 },
+	{ 231.25,	0x1206 },
 	{ 237.5,	0x1286 },
 	{ 243.75,	0x1306 },
 	{ 250,		0x0982 },
+	{ 256.25,	0x1406 },
+	{ 262.5,	0x0a02 },
+	{ 268.75,	0x1506 },
+	{ 275,		0x0a82 },
+	{ 281.25,	0x1606 },
+	{ 287.5,	0x0b02 },
+	{ 293.75,	0x1706 },
+	{ 300,		0x0b82 },
+	{ 306.25,	0x1806 },
+	{ 312.5,	0x0c02 },
+	{ 318.75,	0x1906 },
+	{ 325,		0x0c82 },
+	{ 331.25,	0x1a06 },
+	{ 337.5,	0x0d02 },
+	{ 343.75,	0x1b06 },
+	{ 350,		0x0d82 },
+	{ 356.25,	0x1c06 },
+	{ 362.5,	0x0e02 },
+	{ 368.75,	0x1d06 },
+	{ 375,		0x0e82 },
+	{ 381.25,	0x1e06 },
+	{ 387.5,	0x0f02 },
+	{ 393.75,	0x1f06 },
+	{ 400,		0x0f82 },
+	{ 412.5,	0x1006 },
+	{ 425,		0x0801 },
+	{ 437.5,	0x1105 },
+	{ 450,		0x0881 },
+	{ 462.5,	0x1205 },
+	{ 475,		0x0901 },
+	{ 487.5,	0x1305 },
+	{ 500,		0x0981 },
 };
 
 #define END_CONDITION 0x0000ffff
 
 // Looking for options in --icarus-timing and --icarus-options:
+
+int *GEKKO_RAMP_DONE;
+int *GEKKO_CLK_INDEX;
+int GEKKO_FINAL_CLK;
+int GEKKO_CLK_MALLOC=0;
 //
 // Code increments this each time we start to look at a device
 // However, this means that if other devices are checked by
@@ -564,6 +613,7 @@ static void icarus_initialise(struct cgpu_info *icarus, int baud)
 		case IDENT_ANU:
 		case IDENT_AU3:
 		case IDENT_LIN:
+		case IDENT_GEK:
 			// Enable the UART
 			transfer(icarus, CP210X_TYPE_OUT, CP210X_REQUEST_IFC_ENABLE,
 				 CP210X_VALUE_UART_ENABLE,
@@ -727,6 +777,10 @@ static void set_timing_mode(int this_option_offset, struct cgpu_info *icarus)
 			read_count_timing = ANTUSB_READ_COUNT_TIMING;
 			break;
 		case IDENT_AU3:
+			info->Hs = ANTU3_HASH_TIME;
+			read_count_timing = ANTU3_READ_COUNT_TIMING;
+			break;
+		case IDENT_GEK:
 			info->Hs = ANTU3_HASH_TIME;
 			read_count_timing = ANTU3_READ_COUNT_TIMING;
 			break;
@@ -903,6 +957,7 @@ static void get_options(int this_option_offset, struct cgpu_info *icarus, int *b
 			*fpga_count = 2;
 			break;
 		case IDENT_CMR2:
+		case IDENT_GEK:
 			*baud = ICARUS_IO_SPEED;
 			*work_division = 1;
 			*fpga_count = 1;
@@ -1490,237 +1545,26 @@ static void rock_flush(struct cgpu_info *icarus)
 		free_work(work);
 }
 
-static struct cgpu_info *rock_detect_one(struct libusb_device *dev, struct usb_find_devices *found)
+static bool gekko_prepare(struct thr_info *thr)
 {
-	struct ICARUS_INFO *info;
-	struct timeval tv_start, tv_finish;
-	char *ob_hex = NULL;
-
-	// Block 171874 nonce = (0xa2870100) = 0x000187a2
-	// N.B. golden_ob MUST take less time to calculate
-	//	than the timeout set in icarus_open()
-	//	This one takes ~0.53ms on Rev3 Icarus
-	const char golden_ob[] =
-		"4679ba4ec99876bf4bfe086082b40025"
-		"4df6c356451471139a3afa71e48f544a"
-		"00000000000000000000000000000000"
-		"aa1ff05587320b1a1426674f2fa722ce";
-
-	const char golden_nonce[] = "000187a2";
-	const uint32_t golden_nonce_val = 0x000187a2;
-	unsigned char nonce_bin[ROCK_READ_SIZE];
-	struct ICARUS_WORK workdata;
-	char *nonce_hex;
-	struct cgpu_info *icarus;
-	int ret, err, amount, tries;
-	bool ok;
-	int correction_times = 0;
-	NONCE_DATA nonce_data;
-	uint32_t nonce;
-	char *newname = NULL;
-
-	if ((sizeof(workdata) << 1) != (sizeof(golden_ob) - 1))
-		quithere(1, "Data and golden_ob sizes don't match");
-
-	icarus = usb_alloc_cgpu(&icarus_drv, 1);
-
-	if (!usb_init(icarus, dev, found))
-		goto shin;
-
-	hex2bin((void *)(&workdata), golden_ob, sizeof(workdata));
-	rev((void *)(&(workdata.midstate)), ICARUS_MIDSTATE_SIZE);
-	rev((void *)(&(workdata.work)), ICARUS_WORK_SIZE);
-	if (opt_debug) {
-		ob_hex = bin2hex((void *)(&workdata), sizeof(workdata));
-		applog(LOG_WARNING, "%s %d: send_gold_nonce %s",
-			icarus->drv->name, icarus->device_id, ob_hex);
-		free(ob_hex);
+	struct cgpu_info *gekko = thr->cgpu;
+	struct GEKKO_INFO *info = (struct GEKKO_INFO *)(gekko->device_data);
+	if(GEKKO_CLK_MALLOC==0)
+	{
+		GEKKO_CLK_INDEX=malloc(100*sizeof(int));
+		GEKKO_RAMP_DONE=malloc(100*sizeof(int));
+		GEKKO_CLK_MALLOC=1;
 	}
+	gekko->device_id=gekko->cgminer_id;
+	char *tmp_str;
+	tmp_str=malloc(50*sizeof(char));
+	strncpy(tmp_str,gekko->unique_id,11);
+	strncpy(gekko->unique_id,"\0\0\0\0\0\0\0\0\0\0\0",11);
+	strncpy(gekko->unique_id,(tmp_str)+3*sizeof(char),8);
+	GEKKO_RAMP_DONE[gekko->device_id] = 0;
+	GEKKO_CLK_INDEX[gekko->device_id] = 0;
 
-	info = cgcalloc(1, sizeof(struct ICARUS_INFO));
-	(void)memset(info, 0, sizeof(struct ICARUS_INFO));
-	icarus->device_data = (void *)info;
-	icarus->usbdev->ident = info->ident = IDENT_LIN;
-	info->nonce_size = ROCK_READ_SIZE;
-	info->fail_time = 10;
-	info->nonce_mask = 0xffffffff;
-	update_usb_stats(icarus);
-
-	tries = MAX_TRIES;
-	ok = false;
-	while (!ok && tries-- > 0) {
-		icarus_initialise(icarus, info->baud);
-
-		applog(LOG_DEBUG, "tries: %d", tries);
-		workdata.unused[ICARUS_UNUSED_SIZE - 3] = opt_rock_freq/10 - 1;
-		workdata.unused[ICARUS_UNUSED_SIZE - 2] = (MAX_TRIES-1-tries);
-		info->rmdev.detect_chip_no++;
-		if (info->rmdev.detect_chip_no >= MAX_TRIES)
-			info->rmdev.detect_chip_no = 0;
-		//g_detect_chip_no = (g_detect_chip_no + 1) & MAX_CHIP_NUM;
-
-		usb_buffer_clear(icarus);
-		err = usb_write_ii(icarus, info->intinfo,
-				   (char *)(&workdata), sizeof(workdata), &amount, C_SENDWORK);
-		if (err != LIBUSB_SUCCESS || amount != sizeof(workdata))
-			continue;
-
-		memset(nonce_bin, 0, sizeof(nonce_bin));
-		ret = icarus_get_nonce(icarus, nonce_bin, &tv_start, &tv_finish, NULL, 100);
-
-		applog(LOG_DEBUG, "Rockminer nonce_bin: %02x %02x %02x %02x %02x %02x %02x %02x",
-				  nonce_bin[0], nonce_bin[1], nonce_bin[2], nonce_bin[3],
-				  nonce_bin[4], nonce_bin[5], nonce_bin[6], nonce_bin[7]);
-		if (ret != ICA_NONCE_OK) {
-			applog(LOG_DEBUG, "detect_one get_gold_nonce error, tries = %d", tries);
-			continue;
-		}
-		if (usb_buffer_size(icarus) == 1) {
-			applog(LOG_INFO, "Rock detect found an ANU, skipping");
-			usb_buffer_clear(icarus);
-			break;
-		}
-
-		newname = NULL;
-		switch (nonce_bin[NONCE_CHIP_NO_OFFSET] & RM_PRODUCT_MASK) {
-			case RM_PRODUCT_T1:
-				newname = "LIR"; // Rocketbox
-				info->rmdev.product_id = ROCKMINER_T1;
-				info->rmdev.chip_max = 12;
-				info->rmdev.min_frq = 200;
-				info->rmdev.def_frq = 330;
-				info->rmdev.max_frq = 400;
-				break;
-#if 0
-			case RM_PRODUCT_T2: // what's this?
-				newname = "LIX";
-				info->rmdev.product_id = ROCKMINER_T2;
-				info->rmdev.chip_max = 16;
-				info->rmdev.min_frq = 200;
-				info->rmdev.def_frq = 300;
-				info->rmdev.max_frq = 400;
-				break;
-#endif
-			case RM_PRODUCT_RBOX:
-				newname = "LIN"; // R-Box
-				info->rmdev.product_id = ROCKMINER_RBOX;
-				info->rmdev.chip_max = 4;
-				info->rmdev.min_frq = 200;
-				info->rmdev.def_frq = 270;
-				info->rmdev.max_frq = 400;
-				break;
-			default:
-				continue;
-		}
-
-		snprintf(info->rock_init, sizeof(info->rock_init), "%02x %02x %02x %02x",
-				  nonce_bin[4], nonce_bin[5], nonce_bin[6], nonce_bin[7]);
-
-		nonce_data.chip_no = nonce_bin[NONCE_CHIP_NO_OFFSET] & RM_CHIP_MASK;
-		if (nonce_data.chip_no >= info->rmdev.chip_max)
-			nonce_data.chip_no = 0;
-
-		nonce_data.cmd_value = nonce_bin[NONCE_TASK_CMD_OFFSET] & RM_CMD_MASK;
-		if (nonce_data.cmd_value == NONCE_TASK_COMPLETE_CMD) {
-			applog(LOG_DEBUG, "complete g_detect_chip_no: %d", info->rmdev.detect_chip_no);
-			workdata.unused[ICARUS_UNUSED_SIZE - 3] = opt_rock_freq/10 - 1;
-			workdata.unused[ICARUS_UNUSED_SIZE - 2] =  info->rmdev.detect_chip_no;
-			info->rmdev.detect_chip_no++;
-			if (info->rmdev.detect_chip_no >= MAX_TRIES)
-				info->rmdev.detect_chip_no = 0;
-
-			err = usb_write_ii(icarus, info->intinfo,
-				   (char *)(&workdata), sizeof(workdata), &amount, C_SENDWORK);
-			if (err != LIBUSB_SUCCESS || amount != sizeof(workdata))
-				continue;
-			applog(LOG_DEBUG, "send_gold_nonce usb_write_ii");
-			continue;
-		}
-
-		memcpy((char *)&nonce, nonce_bin, ICARUS_READ_SIZE);
-		nonce = htobe32(nonce);
-		applog(LOG_DEBUG, "Rockminer nonce: %08X", nonce);
-		correction_times = 0;
-		while (correction_times < NONCE_CORRECTION_TIMES) {
-			nonce_hex = bin2hex(nonce_bin, 4);
-			if (golden_nonce_val == nonce + rbox_corr_values[correction_times]) {
-				memset(&(info->g_work[0]), 0, sizeof(info->g_work));
-				rock_init_last_received_task_complete_time(info);
-
-				ok = true;
-				break;
-			} else {
-				applog(LOG_DEBUG, "detect_one gold_nonce compare error times = %d",
-						  correction_times);
-				if (tries < 0 && info->ident != IDENT_CMR2) {
-					applog(LOG_WARNING,
-						"Icarus Detect: "
-						"Test failed at %s: get %s, should: %s",
-						icarus->device_path, nonce_hex, golden_nonce);
-				}
-
-				if (nonce == 0)
-					break;
-			}
-			free(nonce_hex);
-			correction_times++;
-		}
-	}
-
-	if (!ok)
-		goto unshin;
-
-	if (newname) {
-		if (!icarus->drv->copy)
-			icarus->drv = copy_drv(icarus->drv);
-		icarus->drv->name = newname;
-	}
-
-	applog(LOG_DEBUG, "Icarus Detect: Test succeeded at %s: got %s",
-		          icarus->device_path, golden_nonce);
-
-	/* We have a real Rockminer! */
-	if (!add_cgpu(icarus))
-		goto unshin;
-
-	icarus->drv->scanwork = rock_scanwork;
-	icarus->drv->dname = "Rockminer";
-	icarus->drv->get_statline_before = &rock_statline_before;
-	icarus->drv->flush_work = &rock_flush;
-	mutex_init(&info->lock);
-
-	applog(LOG_INFO, "%s %d: Found at %s",
-			  icarus->drv->name, icarus->device_id,
-			  icarus->device_path);
-
-	timersub(&tv_finish, &tv_start, &(info->golden_tv));
-
-	return icarus;
-
-unshin:
-
-	usb_uninit(icarus);
-	free(info);
-	icarus->device_data = NULL;
-
-shin:
-
-	icarus = usb_free_cgpu(icarus);
-
-	return NULL;
-}
-
-static void icarus_detect(bool __maybe_unused hotplug)
-{
-	usb_detect(&icarus_drv, rock_detect_one);
-	usb_detect(&icarus_drv, icarus_detect_one);
-}
-
-static bool icarus_prepare(struct thr_info *thr)
-{
-	struct cgpu_info *icarus = thr->cgpu;
-	struct ICARUS_INFO *info = (struct ICARUS_INFO *)(icarus->device_data);
-
+	//applog(LOG_WARNING, "PREPARE %i %i",gekko->cgminer_id,gekko->device_id);
 	if (info->ant)
 		info->antworks = cgcalloc(sizeof(struct work *), ANT_QUEUE_NUM);
 	return true;
@@ -1974,7 +1818,26 @@ static int64_t icarus_scanwork(struct thr_info *thr)
 	int64_t estimate_hashes;
 	uint8_t workid = 0;
 
-	if (unlikely(share_work_tdiff(icarus) > info->fail_time)) {
+		//gekko->device_id=gekko->cgminer_id;
+	if(GEKKO_RAMP_DONE[gekko->device_id] == 0)
+	{
+		int compac_freq;
+		
+		compac_freq = u3freqtable[GEKKO_CLK_INDEX[gekko->device_id]].freq;
+
+		uint16_t anu_freq_hex = anu3_find_freqhex(compac_freq);
+
+		if (!set_anu_freq(gekko, info, anu_freq_hex)) {
+			applog(LOG_WARNING, "%s %i: Failed to set frequency, too much overclock?",
+			       gekko->drv->name, gekko->device_id);
+		}
+		applog(LOG_DEBUG, "novak: SETTING FREQ ON DEVICE %i (%s), FREQ NOW %d, ramping to %d", gekko->device_id,gekko->unique_id, compac_freq, GEKKO_FINAL_CLK);
+		GEKKO_CLK_INDEX[gekko->device_id]++;
+		if(compac_freq >= GEKKO_FINAL_CLK)
+			GEKKO_RAMP_DONE[gekko->device_id] =1;
+	}
+
+	if (unlikely(share_work_tdiff(gekko) > info->fail_time)) {
 		if (info->failing) {
 			if (share_work_tdiff(icarus) > info->fail_time + 60) {
 				applog(LOG_ERR, "%s %d: Device failed to respond to restart",
