@@ -6714,6 +6714,14 @@ void inc_hw_errors(struct thr_info *thr)
 	thr->cgpu->drv->hw_error(thr);
 }
 
+void inc_dev_status(int max_fan, int max_temp)
+{
+	mutex_lock(&stats_lock);
+	g_max_fan = max_fan;
+	g_max_temp = max_temp;
+	mutex_unlock(&stats_lock);
+}
+
 /* Fills in the work nonce and builds the output data in work->hash */
 static void rebuild_nonce(struct work *work, uint32_t nonce)
 {
@@ -6767,6 +6775,21 @@ static void update_work_stats(struct thr_info *thr, struct work *work)
 	mutex_unlock(&stats_lock);
 }
 
+void inc_work_stats(struct thr_info *thr, struct pool *pool, int diff1)
+{
+	mutex_lock(&stats_lock);
+	total_diff1 += diff1;
+	thr->cgpu->diff1 += diff1;
+	if(pool) {
+		pool->diff1 += diff1;
+	} else {
+		pool = current_pool();
+		pool->diff1 += diff1;
+	}
+	thr->cgpu->last_device_valid_work = time(NULL);
+	mutex_unlock(&stats_lock);
+}
+
 /* To be used once the work has been tested to be meet diff1 and has had its
  * nonce adjusted. Returns true if the work target is met. */
 bool submit_tested_work(struct thr_info *thr, struct work *work)
@@ -6813,6 +6836,41 @@ bool submit_nonce(struct thr_info *thr, struct work *work, uint32_t nonce)
 	if (opt_benchfile && opt_benchfile_display)
 		benchfile_dspwork(work, nonce);
 
+	return true;
+}
+
+bool submit_nonce_1(struct thr_info *thr, struct work *work, uint32_t nonce, int * nofull)
+{
+	if(nofull) *nofull = 0;
+	if (test_nonce(work, nonce)) {
+		update_work_stats(thr, work);
+		if (!fulltest(work->hash, work->target)) {
+			if(nofull) *nofull = 1;
+			applog(LOG_INFO, "Share above target");
+			return false;
+		}
+	} else {
+		inc_hw_errors(thr);
+		return false;
+	}
+	return true;
+}
+
+void submit_nonce_2(struct work *work)
+{
+	struct work *work_out;
+	work_out = copy_work(work);
+	submit_work_async(work_out);
+}
+
+bool submit_nonce_direct(struct thr_info *thr, struct work *work, uint32_t nonce)
+{
+	struct work *work_out;
+	uint32_t *work_nonce = (uint32_t *)(work->data + 64 + 12);
+	*work_nonce = htole32(nonce);
+
+	work_out = copy_work(work);
+	submit_work_async(work_out);
 	return true;
 }
 
