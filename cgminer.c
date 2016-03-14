@@ -68,6 +68,10 @@ char *curly = ":D";
 #include "driver-bitmain.h"
 #endif
 
+#ifdef USE_ZWILLAPI
+#include "zapi.h"
+#endif
+
 #if defined (USE_BITMAIN)
 #	define USE_FPGA
 #endif
