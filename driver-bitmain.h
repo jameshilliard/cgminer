@@ -268,5 +268,6 @@ extern int opt_bitmain_fan_max;
 extern bool opt_bitmain_auto;
 extern char *set_bitmain_dev(char *arg);
 extern char *set_bitmain_fan(char *arg);
+char g_miner_version[256];
 
 #endif /* USE_BITMAIN */
