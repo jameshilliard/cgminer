@@ -187,6 +187,7 @@ static char *opt_set_null;
 char *opt_bitmain_options = NULL;
 char *opt_bitmain_freq = NULL;
 char *opt_bitmain_voltage = NULL;
+int g_max_fan, g_max_temp;
 #endif
 
 #ifdef USE_USBUTILS
@@ -4615,6 +4616,8 @@ void zero_stats(void)
 	rolling5 = 0;
 	rolling15 = 0;
 	total_mhashes_done = 0;
+	g_max_fan = 0;
+	g_max_temp = 0;
 	total_getworks = 0;
 	total_accepted = 0;
 	total_rejected = 0;
