@@ -34,12 +34,8 @@ m4/ltsugar.m4
 m4/ltversion.m4
 m4/lt~obsolete.m4
 
-
-cgminer.c
-api.c
-api.h
 cgminer
-cgminer.exe
+
 minerd
 minerd.exe
 *.o
@@ -57,7 +53,6 @@ depcomp
 missing
 install-sh
 stamp-h1
-cpuminer-config.h*
 compile
 config.log
 config.status
