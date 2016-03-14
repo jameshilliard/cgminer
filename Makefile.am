@@ -63,4 +63,7 @@ if HAS_BITMAIN
 cgminer_SOURCES += driver-bitmain.c driver-bitmain.h
 endif
 
+if HAS_ZWILLAPI
+cgminer_SOURCES += zapi.c zapi.h
+endif
 
