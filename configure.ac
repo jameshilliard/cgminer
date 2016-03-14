@@ -441,13 +441,13 @@ if test "x$standalone" = xyes; then
 fi
 
 echo
-echo "Compilation............: make (or gmake)"
+echo "Compilation............: make"
 echo "  CPPFLAGS.............: $CPPFLAGS"
 echo "  CFLAGS...............: $CFLAGS"
 echo "  LDFLAGS..............: $LDFLAGS $PTHREAD_FLAGS"
 echo "  LDADD................: $DLOPEN_FLAGS $LIBCURL_LIBS $LIBSYSTEMD_LIBS $JANSSON_LIBS $PTHREAD_LIBS $NCURSES_LIBS $PDCURSES_LIBS $WS2_LIBS $MATH_LIBS $LIBUSB_LIBS $RT_LIBS"
 echo
-echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
+echo "Installation...........: make install (not needed)"
 echo "  prefix...............: $prefix"
 echo
 if test "x$want_usbutils$dlibusb" = xyesyes; then
