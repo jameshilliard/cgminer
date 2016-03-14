@@ -1489,6 +1489,8 @@ extern int check_asicnum(int asic_num, unsigned char nonce);
 extern bool submit_nonce_direct(struct thr_info *thr, struct work *work, uint32_t nonce);
 extern void inc_work_stats(struct thr_info *thr, struct pool *pool, int diff1);
 extern void inc_dev_status(int max_fan, int max_temp);
+extern void cg_logwork(struct work *work, unsigned char *nonce_bin, bool ok);
+extern void cg_logwork_uint32(struct work *work, uint32_t nonce, bool ok);
 #endif
 
 #endif /* __MINER_H__ */
