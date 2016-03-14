@@ -143,6 +143,8 @@ fi
 AM_CONDITIONAL([HAS_BITMAIN], [test x$bitmain = xyes])
 forcecombo="no"
 
+
+
 AC_ARG_ENABLE([forcecombo],
 	[AC_HELP_STRING([--enable-forcecombo],[Allow combinations of drivers not intended to be built together(default disabled)])],
 	[forcecombo=$enableval]
@@ -203,6 +205,7 @@ AM_CONDITIONAL([HAVE_CURSES], [test x$curses = xyes])
 AM_CONDITIONAL([HAVE_WINDOWS], [test x$have_win32 = xtrue])
 AM_CONDITIONAL([HAVE_x86_64], [test x$have_x86_64 = xtrue])
 AM_CONDITIONAL([WANT_CRC16], [test x$want_crc16 != xfalse])
+AM_CONDITIONAL([HAS_ZWILLAPI], [test x$zwillapi = xyes])
 
 if test "x$want_usbutils" != xfalse; then
 	dlibusb="no"
