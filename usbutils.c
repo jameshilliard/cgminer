@@ -97,30 +97,7 @@ static struct usb_epinfo btm_epinfos[] = {
 
 static struct usb_find_devices find_dev[] = {
 
-#ifdef USE_ANT_S1
-	{
-		.drv = DRIVER_ants1,
-		.name = "ANT",
-		.ident = IDENT_ANT,
-		.idVendor = 0x4254,
-		.idProduct = 0x4153,
-		.config = 1,
-		.timeout = ANT_S1_TIMEOUT_MS,
-		.latency = LATENCY_ANTS1,
-		INTINFO(ants1_ints) },
-#endif
-#ifdef USE_ANT_S3
-	{
-		.drv = DRIVER_ants3,
-		.name = "AS3",
-		.ident = IDENT_AS3,
-		.idVendor = 0x4254,
-		.idProduct = 0x4153,
-		.config = 1,
-		.timeout = ANT_S3_TIMEOUT_MS,
-		.latency = LATENCY_ANTS3,
-		INTINFO(ants3_ints) },
-#endif
+
 #ifdef USE_BITMAIN
 	{
 		.drv = DRIVER_bitmain,
