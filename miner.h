@@ -234,28 +234,7 @@ static inline int fsync (int fd)
 	DRIVER_ADD_COMMAND(modminer)
 
 #define ASIC_PARSE_COMMANDS(DRIVER_ADD_COMMAND) \
-	DRIVER_ADD_COMMAND(ants1) \
-	DRIVER_ADD_COMMAND(ants2) \
-	DRIVER_ADD_COMMAND(ants3) \
-	DRIVER_ADD_COMMAND(avalon) \
-	DRIVER_ADD_COMMAND(avalon2) \
-	DRIVER_ADD_COMMAND(avalon4) \
-	DRIVER_ADD_COMMAND(avalonm) \
-	DRIVER_ADD_COMMAND(bflsc) \
-	DRIVER_ADD_COMMAND(bitfury) \
-	DRIVER_ADD_COMMAND(blockerupter) \
-	DRIVER_ADD_COMMAND(cointerra) \
-	DRIVER_ADD_COMMAND(hashfast) \
-	DRIVER_ADD_COMMAND(hashratio) \
-	DRIVER_ADD_COMMAND(icarus) \
-	DRIVER_ADD_COMMAND(klondike) \
-	DRIVER_ADD_COMMAND(knc) \
-	DRIVER_ADD_COMMAND(bitmineA1) \
-	DRIVER_ADD_COMMAND(drillbit) \
-	DRIVER_ADD_COMMAND(bab) \
-	DRIVER_ADD_COMMAND(minion) \
-	DRIVER_ADD_COMMAND(sp10) \
-	DRIVER_ADD_COMMAND(sp30)
+	DRIVER_ADD_COMMAND(bitmain)
 
 #define DRIVER_PARSE_COMMANDS(DRIVER_ADD_COMMAND) \
 	FPGA_PARSE_COMMANDS(DRIVER_ADD_COMMAND) \
@@ -445,31 +424,14 @@ struct cgpu_info {
 	bool blacklisted;
 	bool nozlp; // Device prefers no zero length packet
 #endif
-#if defined(USE_AVALON) || defined(USE_AVALON2) || defined (USE_AVALON_MINER)
+
+#ifdef USE_BITMAIN
+	int device_fd;
 	struct work **works;
 	int work_array;
 	int queued;
 	int results;
 #endif
-#ifdef USE_MODMINER
-	char fpgaid;
-	unsigned char clock;
-	pthread_mutex_t *modminer_mutex;
-#endif
-#ifdef USE_BITFORCE
-	struct timeval work_start_tv;
-	unsigned int wait_ms;
-	unsigned int sleep_ms;
-	double avg_wait_f;
-	unsigned int avg_wait_d;
-	uint32_t nonces;
-	bool nonce_range;
-	bool polling;
-	bool flash_led;
-#endif /* USE_BITFORCE */
-#if defined(USE_BITFORCE) || defined(USE_BFLSC)
-	pthread_mutex_t device_mutex;
-#endif /* USE_BITFORCE || USE_BFLSC */
 	enum dev_enable deven;
 	int accepted;
 	int rejected;
@@ -1009,67 +971,21 @@ extern int opt_au3_volt;
 extern float opt_rock_freq;
 #endif
 extern bool opt_worktime;
-#ifdef USE_AVALON
-extern char *opt_avalon_options;
-extern char *opt_bitburner_fury_options;
-#endif
-#ifdef USE_KLONDIKE
-extern char *opt_klondike_options;
-#endif
-#ifdef USE_DRILLBIT
-extern char *opt_drillbit_options;
-extern char *opt_drillbit_auto;
-#endif
-#ifdef USE_BAB
-extern char *opt_bab_options;
-#endif
-#ifdef USE_BITMINE_A1
-extern char *opt_bitmine_a1_options;
-#endif
-#ifdef USE_ANT_S1
+#ifdef USE_BITMAIN
 extern char *opt_bitmain_options;
-extern char *opt_bitmain_freq;
-extern bool opt_bitmain_hwerror;
-#endif
-#if (defined(USE_ANT_S2) || defined(USE_ANT_S3))
-#ifndef USE_ANT_S3
-extern char *opt_bitmain_dev;
-#endif
-extern char *opt_bitmain_options;
-extern char *opt_bitmain_freq;
 extern bool opt_bitmain_hwerror;
 extern bool opt_bitmain_checkall;
-extern bool opt_bitmain_checkn2diff;
-extern bool opt_bitmain_beeper;
-extern bool opt_bitmain_tempoverctrl;
+extern char *opt_bitmain_freq;
 extern char *opt_bitmain_voltage;
-#endif
-#ifdef USE_MINION
-extern int opt_minion_chipreport;
-extern char *opt_minion_cores;
-extern bool opt_minion_extra;
-extern char *opt_minion_freq;
-extern int opt_minion_freqchange;
-extern int opt_minion_freqpercent;
-extern bool opt_minion_idlecount;
-extern int opt_minion_ledcount;
-extern int opt_minion_ledlimit;
-extern bool opt_minion_noautofreq;
-extern bool opt_minion_overheat;
-extern int opt_minion_spidelay;
-extern char *opt_minion_spireset;
-extern int opt_minion_spisleep;
-extern int opt_minion_spiusec;
-extern char *opt_minion_temp;
+extern bool opt_bitmain_checkn2diff;
+extern bool opt_bitmain_nobeeper;
+extern bool opt_bitmain_notempoverctrl;
 #endif
 #ifdef USE_USBUTILS
 extern char *opt_usb_select;
 extern int opt_usbdump;
 extern bool opt_usb_list_all;
 extern cgsem_t usb_resource_sem;
-#endif
-#ifdef USE_BITFORCE
-extern bool opt_bfl_noncerange;
 #endif
 extern int swork_id;
 
@@ -1417,34 +1333,6 @@ struct work {
 	char		getwork_mode;
 };
 
-#ifdef USE_MODMINER
-struct modminer_fpga_state {
-	bool work_running;
-	struct work running_work;
-	struct timeval tv_workstart;
-	uint32_t hashes;
-
-	char next_work_cmd[46];
-	char fpgaid;
-
-	bool overheated;
-	bool new_work;
-
-	uint32_t shares;
-	uint32_t shares_last_hw;
-	uint32_t hw_errors;
-	uint32_t shares_to_good;
-	uint32_t timeout_fail;
-	uint32_t success_more;
-	struct timeval last_changed;
-	struct timeval last_nonce;
-	struct timeval first_work;
-	bool death_stage_one;
-	bool tried_two_byte_temp;
-	bool one_byte_temp;
-};
-#endif
-
 #define TAILBUFSIZ 64
 
 #define tailsprintf(buf, bufsiz, fmt, ...) do { \
@@ -1594,5 +1482,10 @@ extern struct api_data *api_add_avg(struct api_data *root, char *name, float *da
 extern void dupalloc(struct cgpu_info *cgpu, int timelimit);
 extern void dupcounters(struct cgpu_info *cgpu, uint64_t *checked, uint64_t *dups);
 extern bool isdupnonce(struct cgpu_info *cgpu, struct work *work, uint32_t nonce);
+
+#if defined(USE_BITMAIN)
+extern void rev(unsigned char *s, size_t l);
+extern int check_asicnum(int asic_num, unsigned char nonce);
+#endif
 
 #endif /* __MINER_H__ */
