@@ -1052,6 +1052,9 @@ extern bool add_pool_details(struct pool *pool, bool live, char *url, char *user
 
 #define MAX_DEVICES 4096
 
+extern char g_miner_version[256];
+extern char g_miner_compiletime[256];
+extern char g_miner_type[256];
 extern bool hotplug_mode;
 extern int hotplug_time;
 extern struct list_head scan_devices;
@@ -1077,6 +1080,7 @@ extern double total_rolling;
 extern double total_mhashes_done;
 extern unsigned int new_blocks;
 extern unsigned int found_blocks;
+extern int g_max_fan, g_max_temp;
 extern int64_t total_accepted, total_rejected, total_diff1;
 extern int64_t total_getworks, total_stale, total_discarded;
 extern double total_diff_accepted, total_diff_rejected, total_diff_stale;
