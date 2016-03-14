@@ -80,3 +80,5 @@ lib/warn-on-use.h
 mkinstalldirs
 
 *.swp
+zapi.c
+zapi.h
