@@ -64,11 +64,11 @@ char *curly = ":D";
 	#include <sys/wait.h>
 #endif
 
-#if defined(BITMAIN) 
+#ifdef USE_BITMAIN
 #include "driver-bitmain.h"
 #endif
 
-#if defined(BITMAIN)
+#if defined (USE_BITMAIN)
 #	define USE_FPGA
 #endif
 
