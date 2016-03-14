@@ -81,8 +81,12 @@ static struct list_head ut_list;
 static struct usb_epinfo btm_epinfos[] = {
 	{ LIBUSB_TRANSFER_TYPE_BULK,	64,	EPI(1), 0, 0 },
 	{ LIBUSB_TRANSFER_TYPE_BULK,	64,	EPO(1), 0, 0 }
-#endif
 };
+
+static struct usb_intinfo btm_ints[] = {
+	USB_EPS(0, btm_epinfos)
+};
+#endif
 
 
 #define IDVENDOR_FTDI 0x0403
