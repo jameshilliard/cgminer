@@ -26,17 +26,8 @@
 #include "util.h"
 #include "klist.h"
 
-#if defined(USE_BFLSC) || defined(USE_AVALON) || defined(USE_AVALON2) || defined(USE_AVALON4) || \
-  defined(USE_HASHFAST) || defined(USE_BITFURY) || defined(USE_BLOCKERUPTER) || defined(USE_KLONDIKE) || \
-	defined(USE_KNC) || defined(USE_BAB) || defined(USE_DRILLBIT) || \
-	defined(USE_MINION) || defined(USE_COINTERRA) || defined(USE_BITMINE_A1) || \
-	defined(USE_ANT_S1) || defined(USE_ANT_S2) || defined(USE_ANT_S3) || defined(USE_SP10) || \
-	defined(USE_SP30) || defined(USE_ICARUS) || defined(USE_HASHRATIO) || defined(USE_AVALON_MINER)
+#if defined(USE_BITMAIN)
 #define HAVE_AN_ASIC 1
-#endif
-
-#if defined(USE_BITFORCE) || defined(USE_MODMINER)
-#define HAVE_AN_FPGA 1
 #endif
 
 // BUFSIZ varies on Windows and Linux
@@ -45,81 +36,6 @@
 // Number of requests to queue - normally would be small
 // However lots of PGA's may mean more
 #define QUEUE	100
-
-#if defined WIN32
-static char WSAbuf[1024];
-
-struct WSAERRORS {
-	int id;
-	char *code;
-} WSAErrors[] = {
-	{ 0,			"No error" },
-	{ WSAEINTR,		"Interrupted system call" },
-	{ WSAEBADF,		"Bad file number" },
-	{ WSAEACCES,		"Permission denied" },
-	{ WSAEFAULT,		"Bad address" },
-	{ WSAEINVAL,		"Invalid argument" },
-	{ WSAEMFILE,		"Too many open sockets" },
-	{ WSAEWOULDBLOCK,	"Operation would block" },
-	{ WSAEINPROGRESS,	"Operation now in progress" },
-	{ WSAEALREADY,		"Operation already in progress" },
-	{ WSAENOTSOCK,		"Socket operation on non-socket" },
-	{ WSAEDESTADDRREQ,	"Destination address required" },
-	{ WSAEMSGSIZE,		"Message too long" },
-	{ WSAEPROTOTYPE,	"Protocol wrong type for socket" },
-	{ WSAENOPROTOOPT,	"Bad protocol option" },
-	{ WSAEPROTONOSUPPORT,	"Protocol not supported" },
-	{ WSAESOCKTNOSUPPORT,	"Socket type not supported" },
-	{ WSAEOPNOTSUPP,	"Operation not supported on socket" },
-	{ WSAEPFNOSUPPORT,	"Protocol family not supported" },
-	{ WSAEAFNOSUPPORT,	"Address family not supported" },
-	{ WSAEADDRINUSE,	"Address already in use" },
-	{ WSAEADDRNOTAVAIL,	"Can't assign requested address" },
-	{ WSAENETDOWN,		"Network is down" },
-	{ WSAENETUNREACH,	"Network is unreachable" },
-	{ WSAENETRESET,		"Net connection reset" },
-	{ WSAECONNABORTED,	"Software caused connection abort" },
-	{ WSAECONNRESET,	"Connection reset by peer" },
-	{ WSAENOBUFS,		"No buffer space available" },
-	{ WSAEISCONN,		"Socket is already connected" },
-	{ WSAENOTCONN,		"Socket is not connected" },
-	{ WSAESHUTDOWN,		"Can't send after socket shutdown" },
-	{ WSAETOOMANYREFS,	"Too many references, can't splice" },
-	{ WSAETIMEDOUT,		"Connection timed out" },
-	{ WSAECONNREFUSED,	"Connection refused" },
-	{ WSAELOOP,		"Too many levels of symbolic links" },
-	{ WSAENAMETOOLONG,	"File name too long" },
-	{ WSAEHOSTDOWN,		"Host is down" },
-	{ WSAEHOSTUNREACH,	"No route to host" },
-	{ WSAENOTEMPTY,		"Directory not empty" },
-	{ WSAEPROCLIM,		"Too many processes" },
-	{ WSAEUSERS,		"Too many users" },
-	{ WSAEDQUOT,		"Disc quota exceeded" },
-	{ WSAESTALE,		"Stale NFS file handle" },
-	{ WSAEREMOTE,		"Too many levels of remote in path" },
-	{ WSASYSNOTREADY,	"Network system is unavailable" },
-	{ WSAVERNOTSUPPORTED,	"Winsock version out of range" },
-	{ WSANOTINITIALISED,	"WSAStartup not yet called" },
-	{ WSAEDISCON,		"Graceful shutdown in progress" },
-	{ WSAHOST_NOT_FOUND,	"Host not found" },
-	{ WSANO_DATA,		"No host data of that type was found" },
-	{ -1,			"Unknown error code" }
-};
-
-char *WSAErrorMsg(void) {
-	int i;
-	int id = WSAGetLastError();
-
-	/* Assume none of them are actually -1 */
-	for (i = 0; WSAErrors[i].id != -1; i++)
-		if (WSAErrors[i].id == id)
-			break;
-
-	sprintf(WSAbuf, "Socket Error: (%d) %s", id, WSAErrors[i].code);
-
-	return &(WSAbuf[0]);
-}
-#endif
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
 #define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
@@ -160,67 +76,9 @@ static const char *FALSESTR = "false";
 static const char *SHA256STR = "sha256";
 
 static const char *DEVICECODE = ""
-#ifdef USE_ANT_S1
-			"ANT "
+#ifdef USE_BITMAIN
+			"BTM "
 #endif
-#ifdef USE_ANT_S2
-			"AS2 "
-#endif
-#ifdef USE_ANT_S3
-			"AS3 "
-#endif
-#ifdef USE_AVALON
-			"AVA "
-#endif
-#ifdef USE_BAB
-			"BaB "
-#endif
-#ifdef USE_BFLSC
-			"BAS "
-#endif
-#ifdef USE_BITFORCE
-			"BFL "
-#endif
-#ifdef USE_BITFURY
-			"BFU "
-#endif
-#ifdef USE_BLOCKERUPTER
-                        "BET "
-#endif
-#ifdef USE_DRILLBIT
-			"DRB "
-#endif
-#ifdef USE_HASHFAST
-			"HFA "
-#endif
-#ifdef USE_HASHRATIO
-			"HRO "
-#endif
-#ifdef USE_BITMINE_A1
-			"BA1 "
-#endif
-#ifdef USE_ICARUS
-			"ICA "
-#endif
-#ifdef USE_KNC
-			"KnC "
-#endif
-#ifdef USE_MINION
-			"MBA "
-#endif
-#ifdef USE_MODMINER
-			"MMQ "
-#endif
-#ifdef USE_COINTERRA
-			"CTA "
-#endif
-#ifdef USE_SP10
-			"SPN "
-#endif
-#ifdef USE_SP30
-      "S30 "
-#endif
-
 
 			"";
 
@@ -228,20 +86,13 @@ static const char *OSINFO =
 #if defined(__linux)
 			"Linux";
 #else
-#if defined(__APPLE__)
-			"Apple";
-#else
-#if defined (WIN32)
-			"Windows";
-#else
 #if defined(unix)
 			"Unix";
 #else
 			"Unknown";
 #endif
 #endif
-#endif
-#endif
+
 
 #define _DEVS		"DEVS"
 #define _POOLS		"POOLS"
@@ -250,9 +101,6 @@ static const char *OSINFO =
 #define _VERSION	"VERSION"
 #define _MINECONFIG	"CONFIG"
 
-#ifdef HAVE_AN_FPGA
-#define _PGA		"PGA"
-#endif
 
 #ifdef HAVE_AN_ASIC
 #define _ASC		"ASC"
@@ -291,10 +139,6 @@ static const char ISJSON = '{';
 #define JSON_VERSION	JSON1 _VERSION JSON2
 #define JSON_MINECONFIG	JSON1 _MINECONFIG JSON2
 #define JSON_ACTION	JSON0 JSON1 _STATUS JSON6
-
-#ifdef HAVE_AN_FPGA
-#define JSON_PGA	JSON1 _PGA JSON2
-#endif
 
 #ifdef HAVE_AN_ASIC
 #define JSON_ASC	JSON1 _ASC JSON2
@@ -353,24 +197,8 @@ static const char *JSON_PARAMETER = "parameter";
 #define MSG_INVPDP 53
 #define MSG_TOOMANYP 54
 #define MSG_ADDPOOL 55
-
-#ifdef HAVE_AN_FPGA
-#define MSG_PGANON 56
-#define MSG_PGADEV 57
-#define MSG_INVPGA 58
-#endif
-
 #define MSG_NUMPGA 59
 #define MSG_NOTIFY 60
-
-#ifdef HAVE_AN_FPGA
-#define MSG_PGALRENA 61
-#define MSG_PGALRDIS 62
-#define MSG_PGAENA 63
-#define MSG_PGADIS 64
-#define MSG_PGAUNW 65
-#endif
-
 #define MSG_REMLASTP 66
 #define MSG_ACTPOOL 67
 #define MSG_REMPOOL 68
@@ -394,15 +222,6 @@ static const char *JSON_PARAMETER = "parameter";
 #define MSG_CONVAL 86
 #define MSG_USBSTA 87
 #define MSG_NOUSTA 88
-
-#ifdef HAVE_AN_FPGA
-#define MSG_MISPGAOPT 89
-#define MSG_PGANOSET 90
-#define MSG_PGAHELP 91
-#define MSG_PGASETOK 92
-#define MSG_PGASETERR 93
-#endif
-
 #define MSG_ZERMIS 94
 #define MSG_ZERINV 95
 #define MSG_ZERSUM 96
@@ -491,36 +310,21 @@ struct CODES {
 #if defined(HAVE_AN_ASIC) && defined(HAVE_AN_FPGA)
 						" - "
 #endif
-#ifdef HAVE_AN_FPGA
-						"%d PGA(s)"
-#endif
  },
 
  { SEVERITY_ERR,   MSG_NODEVS,	PARAM_NONE,	"No "
 #ifdef HAVE_AN_ASIC
 						"ASCs"
 #endif
-#if defined(HAVE_AN_ASIC) && defined(HAVE_AN_FPGA)
+#if defined(HAVE_AN_ASIC)
 						"/"
 #endif
-#ifdef HAVE_AN_FPGA
-						"PGAs"
-#endif
+
  },
 
  { SEVERITY_SUCC,  MSG_SUMM,	PARAM_NONE,	"Summary" },
  { SEVERITY_ERR,   MSG_INVCMD,	PARAM_NONE,	"Invalid command" },
  { SEVERITY_ERR,   MSG_MISID,	PARAM_NONE,	"Missing device id parameter" },
-#ifdef HAVE_AN_FPGA
- { SEVERITY_ERR,   MSG_PGANON,	PARAM_NONE,	"No PGAs" },
- { SEVERITY_SUCC,  MSG_PGADEV,	PARAM_PGA,	"PGA%d" },
- { SEVERITY_ERR,   MSG_INVPGA,	PARAM_PGAMAX,	"Invalid PGA id %d - range is 0 - %d" },
- { SEVERITY_INFO,  MSG_PGALRENA,PARAM_PGA,	"PGA %d already enabled" },
- { SEVERITY_INFO,  MSG_PGALRDIS,PARAM_PGA,	"PGA %d already disabled" },
- { SEVERITY_INFO,  MSG_PGAENA,	PARAM_PGA,	"PGA %d sent enable message" },
- { SEVERITY_INFO,  MSG_PGADIS,	PARAM_PGA,	"PGA %d set disable flag" },
- { SEVERITY_ERR,   MSG_PGAUNW,	PARAM_PGA,	"PGA %d is not flagged WELL, cannot enable" },
-#endif
  { SEVERITY_SUCC,  MSG_NUMPGA,	PARAM_NONE,	"PGA count" },
  { SEVERITY_SUCC,  MSG_NUMASC,	PARAM_NONE,	"ASC count" },
  { SEVERITY_SUCC,  MSG_VERSION,	PARAM_NONE,	"CGMiner versions" },
@@ -559,10 +363,6 @@ struct CODES {
  { SEVERITY_SUCC,  MSG_FOO,	PARAM_BOOL,	"Failover-Only set to %s" },
  { SEVERITY_SUCC,  MSG_MINECOIN,PARAM_NONE,	"CGMiner coin" },
  { SEVERITY_SUCC,  MSG_DEBUGSET,PARAM_NONE,	"Debug settings" },
-#ifdef HAVE_AN_FPGA
- { SEVERITY_SUCC,  MSG_PGAIDENT,PARAM_PGA,	"Identify command sent to PGA%d" },
- { SEVERITY_WARN,  MSG_PGANOID,	PARAM_PGA,	"PGA%d does not support identify" },
-#endif
  { SEVERITY_SUCC,  MSG_SETCONFIG,PARAM_SET,	"Set config '%s' to %d" },
  { SEVERITY_ERR,   MSG_UNKCON,	PARAM_STR,	"Unknown config '%s'" },
  { SEVERITY_ERR,   MSG_DEPRECATED, PARAM_STR,	"Deprecated config option '%s'" },
@@ -573,13 +373,6 @@ struct CODES {
  { SEVERITY_ERR,   MSG_CONVAL,	PARAM_STR,	"Missing config value N for '%s,N'" },
  { SEVERITY_SUCC,  MSG_USBSTA,	PARAM_NONE,	"USB Statistics" },
  { SEVERITY_INFO,  MSG_NOUSTA,	PARAM_NONE,	"No USB Statistics" },
-#ifdef HAVE_AN_FPGA
- { SEVERITY_ERR,   MSG_MISPGAOPT, PARAM_NONE,	"Missing option after PGA number" },
- { SEVERITY_WARN,  MSG_PGANOSET, PARAM_PGA,	"PGA %d does not support pgaset" },
- { SEVERITY_INFO,  MSG_PGAHELP, PARAM_BOTH,	"PGA %d set help: %s" },
- { SEVERITY_SUCC,  MSG_PGASETOK, PARAM_BOTH,	"PGA %d set OK" },
- { SEVERITY_ERR,   MSG_PGASETERR, PARAM_BOTH,	"PGA %d set failed: %s" },
-#endif
  { SEVERITY_ERR,   MSG_ZERMIS,	PARAM_NONE,	"Missing zero parameters" },
  { SEVERITY_ERR,   MSG_ZERINV,	PARAM_STR,	"Invalid zero parameter '%s'" },
  { SEVERITY_SUCC,  MSG_ZERSUM,	PARAM_STR,	"Zeroed %s stats with summary" },
@@ -1364,41 +1157,6 @@ foundit:
 }
 #endif
 
-#ifdef HAVE_AN_FPGA
-static int numpgas(void)
-{
-	int count = 0;
-	int i;
-
-	rd_lock(&devices_lock);
-	for (i = 0; i < total_devices; i++) {
-		FPGA_PARSE_COMMANDS(DRIVER_COUNT_DRV)
-	}
-	rd_unlock(&devices_lock);
-	return count;
-}
-
-static int pgadevice(int pgaid)
-{
-	int count = 0;
-	int i;
-
-	rd_lock(&devices_lock);
-	for (i = 0; i < total_devices; i++) {
-		FPGA_PARSE_COMMANDS(DRIVER_COUNT_DRV)
-		if (count == (pgaid + 1))
-			goto foundit;
-	}
-
-	rd_unlock(&devices_lock);
-	return -1;
-
-foundit:
-
-	rd_unlock(&devices_lock);
-	return i;
-}
-#endif
 
 // All replies (except BYE and RESTART) start with a message
 //  thus for JSON, message() inserts JSON_START at the front
@@ -1411,9 +1169,7 @@ static void message(struct io_data *io_data, int messageid, int paramid, char *p
 #ifdef HAVE_AN_ASIC
 	int asc;
 #endif
-#ifdef HAVE_AN_FPGA
-	int pga;
-#endif
+
 	int i;
 
 	if (isjson)
@@ -1448,12 +1204,7 @@ static void message(struct io_data *io_data, int messageid, int paramid, char *p
 				case PARAM_POOL:
 					sprintf(buf, codes[i].description, paramid, pools[paramid]->rpc_url);
 					break;
-#ifdef HAVE_AN_FPGA
-				case PARAM_PGAMAX:
-					pga = numpgas();
-					sprintf(buf, codes[i].description, paramid, pga - 1);
-					break;
-#endif
+
 #ifdef HAVE_AN_ASIC
 				case PARAM_ASCMAX:
 					asc = numascs();
@@ -1470,17 +1221,12 @@ static void message(struct io_data *io_data, int messageid, int paramid, char *p
 #ifdef HAVE_AN_ASIC
 					asc = numascs();
 #endif
-#ifdef HAVE_AN_FPGA
-					pga = numpgas();
-#endif
 
 					sprintf(buf, codes[i].description
 #ifdef HAVE_AN_ASIC
 						, asc
 #endif
-#ifdef HAVE_AN_FPGA
-						, pga
-#endif
+
 						);
 					break;
 				case PARAM_CMD:
@@ -1945,9 +1691,6 @@ static void minerconfig(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __
 	asccount = numascs();
 #endif
 
-#ifdef HAVE_AN_FPGA
-	pgacount = numpgas();
-#endif
 
 	message(io_data, MSG_MINECONFIG, 0, NULL, isjson);
 	io_open = io_add(io_data, isjson ? COMSTR JSON_MINECONFIG : _MINECONFIG COMSTR);
@@ -2063,93 +1806,7 @@ static void ascstatus(struct io_data *io_data, int asc, bool isjson, bool precom
 }
 #endif
 
-#ifdef HAVE_AN_FPGA
-static void pgastatus(struct io_data *io_data, int pga, bool isjson, bool precom)
-{
-	struct api_data *root = NULL;
-	char *enabled;
-	char *status;
-	int numpga = numpgas();
 
-	if (numpga > 0 && pga >= 0 && pga < numpga) {
-		int dev = pgadevice(pga);
-		if (dev < 0) // Should never happen
-			return;
-
-		struct cgpu_info *cgpu = get_devices(dev);
-		double frequency = 0;
-		float temp = cgpu->temp;
-		struct timeval now;
-		double dev_runtime;
-
-		if (cgpu->dev_start_tv.tv_sec == 0)
-			dev_runtime = total_secs;
-		else {
-			cgtime(&now);
-			dev_runtime = tdiff(&now, &(cgpu->dev_start_tv));
-		}
-
-		if (dev_runtime < 1.0)
-			dev_runtime = 1.0;
-
-#ifdef USE_MODMINER
-		if (cgpu->drv->drv_id == DRIVER_modminer)
-			frequency = cgpu->clock;
-#endif
-
-		cgpu->utility = cgpu->accepted / dev_runtime * 60;
-
-		if (cgpu->deven != DEV_DISABLED)
-			enabled = (char *)YES;
-		else
-			enabled = (char *)NO;
-
-		status = (char *)status2str(cgpu->status);
-
-		root = api_add_int(root, "PGA", &pga, false);
-		root = api_add_string(root, "Name", cgpu->drv->name, false);
-		root = api_add_int(root, "ID", &(cgpu->device_id), false);
-		root = api_add_string(root, "Enabled", enabled, false);
-		root = api_add_string(root, "Status", status, false);
-		root = api_add_temp(root, "Temperature", &temp, false);
-		double mhs = cgpu->total_mhashes / dev_runtime;
-		root = api_add_mhs(root, "MHS av", &mhs, false);
-		char mhsname[27];
-		sprintf(mhsname, "MHS %ds", opt_log_interval);
-		root = api_add_mhs(root, mhsname, &(cgpu->rolling), false);
-		root = api_add_mhs(root, "MHS 1m", &cgpu->rolling1, false);
-		root = api_add_mhs(root, "MHS 5m", &cgpu->rolling5, false);
-		root = api_add_mhs(root, "MHS 15m", &cgpu->rolling15, false);
-		root = api_add_int(root, "Accepted", &(cgpu->accepted), false);
-		root = api_add_int(root, "Rejected", &(cgpu->rejected), false);
-		root = api_add_int(root, "Hardware Errors", &(cgpu->hw_errors), false);
-		root = api_add_utility(root, "Utility", &(cgpu->utility), false);
-		int last_share_pool = cgpu->last_share_pool_time > 0 ?
-					cgpu->last_share_pool : -1;
-		root = api_add_int(root, "Last Share Pool", &last_share_pool, false);
-		root = api_add_time(root, "Last Share Time", &(cgpu->last_share_pool_time), false);
-		root = api_add_mhtotal(root, "Total MH", &(cgpu->total_mhashes), false);
-		root = api_add_freq(root, "Frequency", &frequency, false);
-		root = api_add_int64(root, "Diff1 Work", &(cgpu->diff1), false);
-		root = api_add_diff(root, "Difficulty Accepted", &(cgpu->diff_accepted), false);
-		root = api_add_diff(root, "Difficulty Rejected", &(cgpu->diff_rejected), false);
-		root = api_add_diff(root, "Last Share Difficulty", &(cgpu->last_share_diff), false);
-#ifdef USE_USBUTILS
-		root = api_add_bool(root, "No Device", &(cgpu->usbinfo.nodev), false);
-#endif
-		root = api_add_time(root, "Last Valid Work", &(cgpu->last_device_valid_work), false);
-		double hwp = (cgpu->hw_errors + cgpu->diff1) ?
-				(double)(cgpu->hw_errors) / (double)(cgpu->hw_errors + cgpu->diff1) : 0;
-		root = api_add_percent(root, "Device Hardware%", &hwp, false);
-		double rejp = cgpu->diff1 ?
-				(double)(cgpu->diff_rejected) / (double)(cgpu->diff1) : 0;
-		root = api_add_percent(root, "Device Rejected%", &rejp, false);
-		root = api_add_elapsed(root, "Device Elapsed", &(dev_runtime), false);
-
-		root = print_data(io_data, root, isjson, precom);
-	}
-}
-#endif
 
 static void devstatus(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __maybe_unused char *param, bool isjson, __maybe_unused char group)
 {
@@ -2163,9 +1820,6 @@ static void devstatus(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __ma
 	numasc = numascs();
 #endif
 
-#ifdef HAVE_AN_FPGA
-	numpga = numpgas();
-#endif
 
 	if (numpga == 0 && numasc == 0) {
 		message(io_data, MSG_NODEVS, 0, NULL, isjson);
@@ -2186,17 +1840,6 @@ static void devstatus(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __ma
 		}
 	}
 #endif
-
-#ifdef HAVE_AN_FPGA
-	if (numpga > 0) {
-		for (i = 0; i < numpga; i++) {
-			pgastatus(io_data, i, isjson, isjson && devcount > 0);
-
-			devcount++;
-		}
-	}
-#endif
-
 	if (isjson && io_open)
 		io_close(io_data);
 }
@@ -2214,10 +1857,6 @@ static void edevstatus(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __m
 
 #ifdef HAVE_AN_ASIC
 	numasc = numascs();
-#endif
-
-#ifdef HAVE_AN_FPGA
-	numpga = numpgas();
 #endif
 
 	if (numpga == 0 && numasc == 0) {
@@ -2262,71 +1901,12 @@ static void edevstatus(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __m
 	}
 #endif
 
-#ifdef HAVE_AN_FPGA
-	if (numpga > 0) {
-		for (i = 0; i < numpga; i++) {
-#ifdef USE_USBUTILS
-			int dev = pgadevice(i);
-			if (dev < 0) // Should never happen
-				continue;
-
-			struct cgpu_info *cgpu = get_devices(dev);
-			if (!cgpu)
-				continue;
-			if (cgpu->blacklisted)
-				continue;
-			if (cgpu->usbinfo.nodev) {
-				if (howoldsec <= 0)
-					continue;
-				if ((when - cgpu->usbinfo.last_nodev.tv_sec) >= howoldsec)
-					continue;
-			}
-#endif
-
-			pgastatus(io_data, i, isjson, isjson && devcount > 0);
-
-			devcount++;
-		}
-	}
-#endif
 
 	if (isjson && io_open)
 		io_close(io_data);
 }
 
-#ifdef HAVE_AN_FPGA
-static void pgadev(struct io_data *io_data, __maybe_unused SOCKETTYPE c, char *param, bool isjson, __maybe_unused char group)
-{
-	bool io_open = false;
-	int numpga = numpgas();
-	int id;
 
-	if (numpga == 0) {
-		message(io_data, MSG_PGANON, 0, NULL, isjson);
-		return;
-	}
-
-	if (param == NULL || *param == '\0') {
-		message(io_data, MSG_MISID, 0, NULL, isjson);
-		return;
-	}
-
-	id = atoi(param);
-	if (id < 0 || id >= numpga) {
-		message(io_data, MSG_INVPGA, id, NULL, isjson);
-		return;
-	}
-
-	message(io_data, MSG_PGADEV, id, NULL, isjson);
-
-	if (isjson)
-		io_open = io_add(io_data, COMSTR JSON_PGA);
-
-	pgastatus(io_data, id, isjson, false);
-
-	if (isjson && io_open)
-		io_close(io_data);
-}
 
 static void pgaenable(struct io_data *io_data, __maybe_unused SOCKETTYPE c, char *param, bool isjson, __maybe_unused char group)
 {
@@ -2650,10 +2230,6 @@ static void pgacount(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __may
 	struct api_data *root = NULL;
 	bool io_open;
 	int count = 0;
-
-#ifdef HAVE_AN_FPGA
-	count = numpgas();
-#endif
 
 	message(io_data, MSG_NUMPGA, 0, NULL, isjson);
 	io_open = io_add(io_data, isjson ? COMSTR JSON_PGAS : _PGAS COMSTR);
@@ -3532,65 +3108,6 @@ static void usbstats(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __may
 #endif
 }
 
-#ifdef HAVE_AN_FPGA
-static void pgaset(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __maybe_unused char *param, bool isjson, __maybe_unused char group)
-{
-	struct cgpu_info *cgpu;
-	struct device_drv *drv;
-	char buf[TMPBUFSIZ];
-	int numpga = numpgas();
-
-	if (numpga == 0) {
-		message(io_data, MSG_PGANON, 0, NULL, isjson);
-		return;
-	}
-
-	if (param == NULL || *param == '\0') {
-		message(io_data, MSG_MISID, 0, NULL, isjson);
-		return;
-	}
-
-	char *opt = strchr(param, ',');
-	if (opt)
-		*(opt++) = '\0';
-	if (!opt || !*opt) {
-		message(io_data, MSG_MISPGAOPT, 0, NULL, isjson);
-		return;
-	}
-
-	int id = atoi(param);
-	if (id < 0 || id >= numpga) {
-		message(io_data, MSG_INVPGA, id, NULL, isjson);
-		return;
-	}
-
-	int dev = pgadevice(id);
-	if (dev < 0) { // Should never happen
-		message(io_data, MSG_INVPGA, id, NULL, isjson);
-		return;
-	}
-
-	cgpu = get_devices(dev);
-	drv = cgpu->drv;
-
-	char *set = strchr(opt, ',');
-	if (set)
-		*(set++) = '\0';
-
-	if (!drv->set_device)
-		message(io_data, MSG_PGANOSET, id, NULL, isjson);
-	else {
-		char *ret = drv->set_device(cgpu, opt, set, buf);
-		if (ret) {
-			if (strcasecmp(opt, "help") == 0)
-				message(io_data, MSG_PGAHELP, id, ret, isjson);
-			else
-				message(io_data, MSG_PGASETERR, id, ret, isjson);
-		} else
-			message(io_data, MSG_PGASETOK, id, NULL, isjson);
-	}
-}
-#endif
 
 static void dozero(struct io_data *io_data, __maybe_unused SOCKETTYPE c, char *param, bool isjson, __maybe_unused char group)
 {
@@ -4021,12 +3538,6 @@ struct CMDS {
 	{ "edevs",		edevstatus,	false,	true },
 	{ "pools",		poolstatus,	false,	true },
 	{ "summary",		summary,	false,	true },
-#ifdef HAVE_AN_FPGA
-	{ "pga",		pgadev,		false,	false },
-	{ "pgaenable",		pgaenable,	true,	false },
-	{ "pgadisable",		pgadisable,	true,	false },
-	{ "pgaidentify",	pgaidentify,	true,	false },
-#endif
 	{ "pgacount",		pgacount,	false,	true },
 	{ "switchpool",		switchpool,	true,	false },
 	{ "addpool",		addpool,	true,	false },
@@ -4049,9 +3560,6 @@ struct CMDS {
 	{ "debug",		debugstate,	true,	false },
 	{ "setconfig",		setconfig,	true,	false },
 	{ "usbstats",		usbstats,	false,	true },
-#ifdef HAVE_AN_FPGA
-	{ "pgaset",		pgaset,		true,	false },
-#endif
 	{ "zero",		dozero,		true,	false },
 	{ "hotplug",		dohotplug,	true,	false },
 #ifdef HAVE_AN_ASIC
@@ -4896,20 +4404,6 @@ void api(int api_thr_id)
 		free(apisock);
 		return;
 	}
-
-#ifndef WIN32
-	// On linux with SO_REUSEADDR, bind will get the port if the previous
-	// socket is closed (even if it is still in TIME_WAIT) but fail if
-	// another program has it open - which is what we want
-	int optval = 1;
-	// If it doesn't work, we don't really care - just show a debug message
-	if (SOCKETFAIL(setsockopt(*apisock, SOL_SOCKET, SO_REUSEADDR, (void *)(&optval), sizeof(optval))))
-		applog(LOG_DEBUG, "API setsockopt SO_REUSEADDR failed (ignored): %s", SOCKERRMSG);
-#else
-	// On windows a 2nd program can bind to a port>1024 already in use unless
-	// SO_EXCLUSIVEADDRUSE is used - however then the bind to a closed port
-	// in TIME_WAIT will fail until the timeout - so we leave the options alone
-#endif
 
 	// try for more than 1 minute ... in case the old one hasn't completely gone yet
 	bound = 0;
