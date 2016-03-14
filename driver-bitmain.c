@@ -23,7 +23,7 @@
 #include "util.h"
 
 #define BITMAIN_CALC_DIFF1	1
-
+#define htole8(x) (x)
 #define BITMAIN_TEST_PRINT_WORK 0
 #ifdef BITMAIN_TEST
 #define BITMAIN_TEST_NUM 19
