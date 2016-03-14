@@ -8,7 +8,6 @@
  */
 
 #include "config.h"
-
 #include <limits.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -16,20 +15,6 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <unistd.h>
-#ifndef WIN32
-  #include <sys/select.h>
-  #include <termios.h>
-  #include <sys/stat.h>
-  #include <fcntl.h>
-  #ifndef O_CLOEXEC
-    #define O_CLOEXEC 0
-  #endif
-#else
-  #include "compat.h"
-  #include <windows.h>
-  #include <io.h>
-#endif
-
 #include "elist.h"
 #include "miner.h"
 #include "usbutils.h"
@@ -38,10 +23,6 @@
 #include "util.h"
 
 #define BITMAIN_CALC_DIFF1	1
-
-#ifdef WIN32
-#define BITMAIN_TEST
-#endif
 
 #define BITMAIN_TEST_PRINT_WORK 0
 #ifdef BITMAIN_TEST
