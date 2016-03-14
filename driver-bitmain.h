@@ -270,4 +270,3 @@ extern char *set_bitmain_dev(char *arg);
 extern char *set_bitmain_fan(char *arg);
 
 #endif /* USE_BITMAIN */
-#endif	/* BITMAIN_H */
