@@ -86,6 +86,11 @@ struct strategies strategies[] = {
 
 static char packagename[256];
 
+FILE * g_logwork_file = NULL;
+FILE * g_logwork_files[65] = {0};
+FILE * g_logwork_diffs[65] = {0};
+int g_logwork_asicnum = 0;
+
 bool opt_work_update;
 bool opt_protocol;
 static struct benchfile_layout {
@@ -8966,12 +8971,8 @@ int main(int argc, char *argv[])
 	sigaction(SIGTERM, &handler, &termhandler);
 	sigaction(SIGINT, &handler, &inthandler);
 	sigaction(SIGABRT, &handler, &abrthandler);
-#ifndef WIN32
-	signal(SIGPIPE, SIG_IGN);
-#else
-	timeBeginPeriod(1);
-#endif
-	opt_kernel_path = alloca(PATH_MAX);
+        timeBeginPeriod(1);
+        opt_kernel_path = alloca(PATH_MAX);
 	strcpy(opt_kernel_path, CGMINER_PREFIX);
 	cgminer_path = alloca(PATH_MAX);
 	s = strdup(argv[0]);
@@ -9029,7 +9030,86 @@ int main(int argc, char *argv[])
 		}
 		set_target(bench_target, 32);
 	}
+	if(opt_version_path) {
+		FILE * fpversion = fopen(opt_version_path, "rb");
+		char tmp[256] = {0};
+		int len = 0;
+		char * start = 0;
+		if(fpversion == NULL) {
+			applog(LOG_ERR, "Open miner version file %s error", opt_version_path);
+		} else {
+			len = fread(tmp, 1, 256, fpversion);
+			if(len <= 0) {
+				applog(LOG_ERR, "Read miner version file %s error %d", opt_version_path, len);
+			} else {
+				start = strstr(tmp, "\n");
+				if(start == NULL) {
+					strcpy(g_miner_compiletime, tmp);
+				} else {
+					memcpy(g_miner_compiletime, tmp, start-tmp);
+					strcpy(g_miner_type, start+1);
+				}
+				if(g_miner_compiletime[strlen(g_miner_compiletime)-1] == '\n')
+					g_miner_compiletime[strlen(g_miner_compiletime)-1] = 0;
+				if(g_miner_compiletime[strlen(g_miner_compiletime)-1] == '\r')
+					g_miner_compiletime[strlen(g_miner_compiletime)-1] = 0;
+				if(g_miner_type[strlen(g_miner_type)-1] == '\n')
+					g_miner_type[strlen(g_miner_type)-1] = 0;
+				if(g_miner_type[strlen(g_miner_type)-1] == '\r')
+					g_miner_type[strlen(g_miner_type)-1] = 0;
+			}
+		}
+		applog(LOG_ERR, "Miner compile time: %s type: %s", g_miner_compiletime, g_miner_type);
+	}
 
+	if(opt_logfile_path) {
+		g_logfile_enable = true;
+		strcpy(g_logfile_path, opt_logfile_path);
+		if(opt_logfile_openflag) {
+			strcpy(g_logfile_openflag, opt_logfile_openflag);
+		}
+		applog(LOG_ERR, "Log file path: %s Open flag: %s", g_logfile_path, g_logfile_openflag);
+	}
+
+	if(opt_logwork_path) {
+		char szfilepath[256] = {0};
+		if(opt_logwork_asicnum) {
+			if(strlen(opt_logwork_asicnum) <= 0) {
+				quit(1, "Log work asic num empty");
+			}
+			g_logwork_asicnum = atoi(opt_logwork_asicnum);
+			if(g_logwork_asicnum != 1 && g_logwork_asicnum != 32 && g_logwork_asicnum != 64) {
+				quit(1, "Log work asic num must be 1, 32, 64");
+			}
+			applog(LOG_ERR, "Log work path: %s Asic num: %s", opt_logwork_path, opt_logwork_asicnum);
+		} else {
+			applog(LOG_ERR, "Log work path: %s", opt_logwork_path);
+		}
+
+		sprintf(szfilepath, "%s.txt", opt_logwork_path);
+		g_logwork_file = fopen(szfilepath, "a+");
+		applog(LOG_ERR, "Log work open file %s", szfilepath);
+
+		if(g_logwork_asicnum == 1) {
+			sprintf(szfilepath, "%s%02d.txt", opt_logwork_path, g_logwork_asicnum);
+			g_logwork_files[0] = fopen(szfilepath, "a+");
+			applog(LOG_ERR, "Log work open asic %d file %s", g_logwork_asicnum, szfilepath);
+		} else if(g_logwork_asicnum == 32 || g_logwork_asicnum == 64) {
+			for(i = 0; i <= g_logwork_asicnum; i++) {
+				sprintf(szfilepath, "%s%02d_%02d.txt", opt_logwork_path, g_logwork_asicnum, i);
+				g_logwork_files[i] = fopen(szfilepath, "a+");
+				applog(LOG_ERR, "Log work open asic %d file %s", g_logwork_asicnum, szfilepath);
+			}
+		}
+
+		if(opt_logwork_diff) {
+			for(i = 0; i <= 64; i++) {
+				sprintf(szfilepath, "%s_diff_%02d.txt", opt_logwork_path, i);
+				g_logwork_diffs[i] = fopen(szfilepath, "a+");
+				applog(LOG_ERR, "Log work open diff file %s", szfilepath);
+			}
+		}
+	}
 #ifdef HAVE_CURSES
 	if (opt_realquiet || opt_display_devs)
 		use_curses = false;
