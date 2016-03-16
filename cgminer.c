@@ -129,7 +129,7 @@ bool opt_quiet;
 bool opt_realquiet;
 bool opt_loginput;
 bool opt_compact;
-const int opt_cutofftemp = 95;
+const int opt_cutofftemp = 80;
 int opt_log_interval = 5;
 static const int max_queue = 1;
 const int max_scantime = 60;
@@ -138,6 +138,7 @@ unsigned long long global_hashrate;
 unsigned long global_quota_gcd = 1;
 time_t last_getwork;
 int opt_pool_fallback = 120;
+int timeBeginPeriod = 1;
 
 #if defined(USE_USBUTILS)
 int nDevs;
