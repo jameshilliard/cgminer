@@ -142,7 +142,7 @@ unsigned long long global_hashrate;
 unsigned long global_quota_gcd = 1;
 time_t last_getwork;
 int opt_pool_fallback = 120;
-int timeBeginPeriod = 1;
+
 
 #if defined(USE_USBUTILS)
 int nDevs;
@@ -9013,7 +9013,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGTERM, &handler, &termhandler);
 	sigaction(SIGINT, &handler, &inthandler);
 	sigaction(SIGABRT, &handler, &abrthandler);
-        timeBeginPeriod(1);
+        
         opt_kernel_path = alloca(PATH_MAX);
 	strcpy(opt_kernel_path, CGMINER_PREFIX);
 	cgminer_path = alloca(PATH_MAX);
