@@ -1,4 +1,4 @@
-/*
+/* Copyright 2016 Miguel Padilla
  * Copyright 2011-2012 Con Kolivas
  * Copyright 2013 Andrew Smith
  *
@@ -20,6 +20,12 @@ bool opt_log_output = false;
 
 /* per default priorities higher than LOG_NOTICE are logged */
 int opt_log_level = LOG_NOTICE;
+
+FILE * g_log_file = NULL;
+
+bool g_logfile_enable = false;
+char g_logfile_path[256] = {0};
+char g_logfile_openflag[32] = {0};
 
 static void my_log_curses(int prio, const char *datetime, const char *str, bool force)
 {
