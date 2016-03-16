@@ -3933,6 +3933,23 @@ uint64_t share_diff(const struct work *work)
 	return ret;
 }
 
+uint64_t share_ndiff(const struct work *work)
+{
+	double d64, s64;
+	uint64_t ret = 0;
+
+	if(work != NULL) {
+		d64 = truediffone;
+		s64 = le256todouble(work->hash);
+		if (unlikely(!s64)) {
+			ret = 0;
+		} else {
+			ret = (d64 / s64);
+		}
+	}
+	return ret;
+}
+
 static void regen_hash(struct work *work)
 {
 	uint32_t *data32 = (uint32_t *)(work->data);
