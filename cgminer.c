@@ -1,4 +1,4 @@
-/*
+/* Copyright 2016 Miguel Padilla
  * Copyright 2011-2015 Con Kolivas
  * Copyright 2011-2015 Andrew Smith
  * Copyright 2011-2012 Luke Dashjr
@@ -8903,6 +8903,10 @@ int main(int argc, char *argv[])
 	unsigned int k;
 	char *s;
 
+        g_logfile_enable = false;
+	strcpy(g_logfile_path, "cgminer.log");
+	strcpy(g_logfile_openflag, "a+");
+	
 	/* This dangerous functions tramples random dynamically allocated
 	 * variables so do it before anything at all */
 	if (unlikely(curl_global_init(CURL_GLOBAL_ALL)))
