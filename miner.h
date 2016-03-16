@@ -1368,6 +1368,7 @@ struct work {
 	strcat(buf, tmp13); \
 } while (0)
 
+extern uint64_t share_ndiff(const struct work *work);
 extern void get_datestamp(char *, size_t, struct timeval *);
 extern void inc_hw_errors(struct thr_info *thr);
 extern bool test_nonce(struct work *work, uint32_t nonce);
