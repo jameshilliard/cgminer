@@ -936,6 +936,14 @@ struct pool;
 #define API_MCAST_CODE "FTW"
 #define API_MCAST_ADDR "224.0.0.75"
 
+extern bool g_logfile_enable;
+extern char g_logfile_path[256];
+extern char g_logfile_openflag[32];
+extern FILE * g_logwork_file;
+extern FILE * g_logwork_files[65];
+extern FILE * g_logwork_diffs[65];
+extern int g_logwork_asicnum;
+
 extern bool opt_work_update;
 extern bool opt_protocol;
 extern bool have_longpoll;
@@ -947,6 +955,9 @@ extern bool opt_lowmem;
 extern bool opt_autofan;
 extern bool opt_autoengine;
 extern bool use_curses;
+extern char *opt_logwork_path;
+extern char *opt_logwork_asicnum;
+extern bool opt_logwork_diff;
 extern char *opt_api_allow;
 extern bool opt_api_mcast;
 extern char *opt_api_mcast_addr;
