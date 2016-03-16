@@ -116,12 +116,14 @@ enum benchwork {
 static char *opt_btc_address;
 static char *opt_btc_sig;
 #endif
+
 static char *opt_benchfile;
 static bool opt_benchfile_display;
 static FILE *benchfile_in;
 static int benchfile_line;
 static int benchfile_work;
 static bool opt_benchmark;
+
 bool have_longpoll;
 bool want_per_device_stats;
 bool use_syslog;
@@ -129,11 +131,13 @@ bool opt_quiet;
 bool opt_realquiet;
 bool opt_loginput;
 bool opt_compact;
+
 const int opt_cutofftemp = 80;
 int opt_log_interval = 5;
 static const int max_queue = 1;
 const int max_scantime = 60;
 const int max_expiry = 600;
+static const bool opt_time = true;
 unsigned long long global_hashrate;
 unsigned long global_quota_gcd = 1;
 time_t last_getwork;
@@ -143,6 +147,7 @@ int timeBeginPeriod = 1;
 #if defined(USE_USBUTILS)
 int nDevs;
 #endif
+
 bool opt_restart = true;
 bool opt_nogpu;
 
@@ -154,16 +159,19 @@ static int most_devices;
 struct cgpu_info **devices;
 int mining_threads;
 int num_processors;
+
 #ifdef HAVE_CURSES
 bool use_curses = true;
 #else
 bool use_curses;
 #endif
+
 static bool opt_widescreen;
 static bool alt_status;
 static bool switch_status;
 static bool opt_submit_stale = true;
 static int opt_shares;
+bool opt_fail_only;
 static bool opt_fix_protocol;
 bool opt_lowmem;
 bool opt_autofan;
@@ -212,9 +220,6 @@ static bool usb_polling;
 char *opt_kernel_path;
 char *cgminer_path;
 
-#if defined(USE_BITFORCE)
-bool opt_bfl_noncerange;
-#endif
 #define QUIET	(opt_quiet || opt_realquiet)
 
 struct thr_info *control_thr;
@@ -222,20 +227,24 @@ struct thr_info **mining_thr;
 static int gwsched_thr_id;
 static int watchpool_thr_id;
 static int watchdog_thr_id;
+
 #ifdef HAVE_CURSES
 static int input_thr_id;
 #endif
+
 int gpur_thr_id;
 static int api_thr_id;
+
 #ifdef USE_USBUTILS
 static int usbres_thr_id;
 static int hotplug_thr_id;
 #endif
+
 static int total_control_threads;
 bool hotplug_mode;
 static int new_devices;
 static int new_threads;
-int hotplug_time = 5;
+int hotplug_time = 0;
 
 #if LOCK_TRACKING
 pthread_mutex_t lockstat_lock;
@@ -260,6 +269,14 @@ pthread_cond_t restart_cond;
 
 pthread_cond_t gws_cond;
 
+#define CG_LOCAL_MHASHES_MAX_NUM 12
+double g_local_mhashes_dones[CG_LOCAL_MHASHES_MAX_NUM] = {0};
+int g_local_mhashes_index = 0;
+double g_displayed_rolling = 0;
+char g_miner_version[256] = {0};
+char g_miner_compiletime[256] = {0};
+char g_miner_type[256] = {0};
+
 double rolling1, rolling5, rolling15;
 double total_rolling;
 double total_mhashes_done;
@@ -270,6 +287,9 @@ cglock_t control_lock;
 pthread_mutex_t stats_lock;
 
 int hw_errors;
+
+int g_max_fan, g_max_temp;
+
 int64_t total_accepted, total_rejected, total_diff1;
 int64_t total_getworks, total_stale, total_discarded;
 double total_diff_accepted, total_diff_rejected, total_diff_stale;
