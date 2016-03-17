@@ -1,4 +1,5 @@
 /*
+ * Copyright 2016 Miguel Padilla
  * Copyright 2011-2015 Andrew Smith
  * Copyright 2011-2015 Con Kolivas
  *
@@ -29,6 +30,10 @@
 #if defined(USE_BITMAIN)
 #define HAVE_AN_ASIC 1
 #endif
+// to be or not to be ??? but we found the fpga entry on other modules
+#if defined(USE_BITMAIN)
+#define HAVE_AN_FPGA 1
+#endif
 
 // BUFSIZ varies on Windows and Linux
 #define TMPBUFSIZ	8192
@@ -54,7 +59,7 @@ static const char SEPARATOR = '|';
 #define JOIN_CMD "CMD="
 #define BETWEEN_JOIN SEPSTR
 
-static const char *APIVERSION = "3.7";
+static const char *APIVERSION = "3.7-s7";
 static const char *DEAD = "Dead";
 static const char *SICK = "Sick";
 static const char *NOSTART = "NoStart";
@@ -75,7 +80,7 @@ static const char *FALSESTR = "false";
 
 static const char *SHA256STR = "sha256";
 
-static const char *DEVICECODE = ""
+static const char *DEVICECODE = "BTM"
 #ifdef USE_BITMAIN
 			"BTM "
 #endif
@@ -104,6 +109,10 @@ static const char *OSINFO =
 
 #ifdef HAVE_AN_ASIC
 #define _ASC		"ASC"
+#endif
+
+#ifdef HAVE_AN_FPGA
+#define _PGA		"PGA"
 #endif
 
 #define _PGAS		"PGAS"
@@ -1674,6 +1683,9 @@ static void apiversion(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __m
 
 	root = api_add_string(root, "CGMiner", VERSION, false);
 	root = api_add_const(root, "API", APIVERSION, false);
+	root = api_add_string(root, "Miner", g_miner_version, false);
+	root = api_add_string(root, "CompileTime", g_miner_compiletime, false);
+	root = api_add_string(root, "Type", g_miner_type, false);
 
 	root = print_data(io_data, root, isjson, false);
 	if (isjson && io_open)
@@ -1702,6 +1714,11 @@ static void minerconfig(struct io_data *io_data, __maybe_unused SOCKETTYPE c, __
 	root = api_add_int(root, "Log Interval", &opt_log_interval, false);
 	root = api_add_const(root, "Device Code", DEVICECODE, false);
 	root = api_add_const(root, "OS", OSINFO, false);
+	root = api_add_bool(root, "Failover-Only", &opt_fail_only, false);
+	root = api_add_int(root, "ScanTime", &opt_scantime, false);
+	root = api_add_int(root, "Queue", &opt_queue, false);
+	root = api_add_int(root, "Expiry", &opt_expiry, false);
+	
 #ifdef USE_USBUTILS
 	if (hotplug_time == 0)
 		root = api_add_const(root, "Hotplug", DISABLED, false);
