@@ -295,6 +295,19 @@ if test "x$bitfury16" = xyes; then
 fi
 AM_CONDITIONAL([HAS_BITFURY16], [test x$bitfury16 = xyes])
 
+bitmain_soc="no"
+
+AC_ARG_ENABLE([bitmain_soc],
+	[AC_HELP_STRING([--enable-bitmain_soc],[Compile support for Bitmain ASICs STANDALONE(default disabled)])],
+	[bitmain_soc=$enableval]
+	)
+if test "x$bitmain_soc" = xyes; then
+	AC_DEFINE([USE_BITMAIN_SOC], [1], [Defined to 1 if Bitmain ASICs support is wanted])
+	drivercount=x$drivercount
+	standalone="yes"
+fi
+AM_CONDITIONAL([HAS_BITMAIN_SOC], [test x$bitmain_soc = xyes])
+
 bitmine_A1="no"
 
 AC_ARG_ENABLE([bitmine_A1],
@@ -805,6 +818,13 @@ else
 	echo "  BitFury16.ASICs......: Disabled"
 fi
 
+if test "x$bitmain_soc" = xyes; then
+	echo "  Bitmain.ASICs......: Enabled"
+else
+	echo "  Bitmain.ASICs......: Disabled"
+fi
+
+
 if test "x$blockerupter" = xyes; then
 	echo "  BlockErupter.ASICs...: Enabled"
 else
@@ -880,7 +900,7 @@ else
 fi
 
 #Add any new device to this, along with a no on the end of the test
-if test "x$avalon$avalon2$avalon4$avalon7$avalon_miner$bab$bflsc$bitforce$bitfury$bitfury16$blockerupter$hashfast$hashratio$icarus$klondike$knc$modminer$drillbit$minion$cointerra$bitmine_A1$ants1$ants2$ants3$sp10$sp30" = xnononononononononononononononononononononononononono; then
+if test "x$avalon$avalon2$avalon4$avalon7$avalon_miner$bab$bflsc$bitforce$bitfury$bitfury16$bitmain_soc$blockerupter$hashfast$hashratio$icarus$klondike$knc$modminer$drillbit$minion$cointerra$bitmine_A1$ants1$ants2$ants3$sp10$sp30" = xnonononononononononononononononononononononononononono; then
 	echo
 	AC_MSG_ERROR([No mining devices configured in])
 	echo

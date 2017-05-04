@@ -17,7 +17,7 @@
 
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
- #endif
+#endif
 
 #if _WIN32
 #include <io.h>  /* for _setmode() */
@@ -29,7 +29,8 @@ static const char dir_sep = '/';
 #endif
 
 
-struct config {
+struct config
+{
     int indent;
     int compact;
     int preserve_order;
@@ -89,11 +90,13 @@ static void read_conf(FILE *conffile)
     char *buffer, *line, *val;
 
     buffer = loadfile(conffile);
-    for (line = strtok(buffer, "\r\n"); line; line = strtok(NULL, "\r\n")) {
+    for (line = strtok(buffer, "\r\n"); line; line = strtok(NULL, "\r\n"))
+    {
         if (!strncmp(line, "export ", 7))
             continue;
         val = strchr(line, '=');
-        if (!val) {
+        if (!val)
+        {
             printf("invalid configuration line\n");
             break;
         }
@@ -113,10 +116,13 @@ static void read_conf(FILE *conffile)
             conf.precision = atoi(val);
         if (!strcmp(line, "STRIP"))
             conf.strip = atoi(val);
-        if (!strcmp(line, "HASHSEED")) {
+        if (!strcmp(line, "HASHSEED"))
+        {
             conf.have_hashseed = 1;
             conf.hashseed = atoi(val);
-        } else {
+        }
+        else
+        {
             conf.have_hashseed = 0;
         }
     }
@@ -133,14 +139,16 @@ static int cmpfile(const char *str, const char *path, const char *fname)
 
     sprintf(filename, "%s%c%s", path, dir_sep, fname);
     file = fopen(filename, "rb");
-    if (!file) {
+    if (!file)
+    {
         if (conf.strip)
             strcat(filename, ".strip");
         else
             strcat(filename, ".normal");
         file = fopen(filename, "rb");
     }
-    if (!file) {
+    if (!file)
+    {
         printf("Error: test result file could not be opened.\n");
         exit(1);
     }
@@ -167,19 +175,22 @@ int use_conf(char *test_path)
     json_error_t error;
 
     sprintf(filename, "%s%cinput", test_path, dir_sep);
-    if (!(infile = fopen(filename, "rb"))) {
+    if (!(infile = fopen(filename, "rb")))
+    {
         fprintf(stderr, "Could not open \"%s\"\n", filename);
         return 2;
     }
 
     sprintf(filename, "%s%cenv", test_path, dir_sep);
     conffile = fopen(filename, "rb");
-    if (conffile) {
+    if (conffile)
+    {
         read_conf(conffile);
         fclose(conffile);
     }
 
-    if (conf.indent < 0 || conf.indent > 31) {
+    if (conf.indent < 0 || conf.indent > 31)
+    {
         fprintf(stderr, "invalid value for JSON_INDENT: %d\n", conf.indent);
         fclose(infile);
         return 2;
@@ -199,7 +210,8 @@ int use_conf(char *test_path)
     if (conf.sort_keys)
         flags |= JSON_SORT_KEYS;
 
-    if (conf.precision < 0 || conf.precision > 31) {
+    if (conf.precision < 0 || conf.precision > 31)
+    {
         fprintf(stderr, "invalid value for JSON_REAL_PRECISION: %d\n",
                 conf.precision);
         fclose(infile);
@@ -211,7 +223,8 @@ int use_conf(char *test_path)
     if (conf.have_hashseed)
         json_object_seed(conf.hashseed);
 
-    if (conf.strip) {
+    if (conf.strip)
+    {
         /* Load to memory, strip leading and trailing whitespace */
         buffer = loadfile(infile);
         json = json_loads(strip(buffer), 0, &error);
@@ -222,7 +235,8 @@ int use_conf(char *test_path)
 
     fclose(infile);
 
-    if (!json) {
+    if (!json)
+    {
         sprintf(errstr, "%d %d %d\n%s\n",
                 error.line, error.column, error.position,
                 error.text);
@@ -262,15 +276,16 @@ int use_env()
     json_t *json;
     json_error_t error;
 
-    #ifdef _WIN32
+#ifdef _WIN32
     /* On Windows, set stdout and stderr to binary mode to avoid
        outputting DOS line terminators */
     _setmode(_fileno(stdout), _O_BINARY);
     _setmode(_fileno(stderr), _O_BINARY);
-    #endif
+#endif
 
     indent = getenv_int("JSON_INDENT");
-    if(indent < 0 || indent > 31) {
+    if(indent < 0 || indent > 31)
+    {
         fprintf(stderr, "invalid value for JSON_INDENT: %d\n", indent);
         return 2;
     }
@@ -290,7 +305,8 @@ int use_env()
         flags |= JSON_SORT_KEYS;
 
     precision = getenv_int("JSON_REAL_PRECISION");
-    if(precision < 0 || precision > 31) {
+    if(precision < 0 || precision > 31)
+    {
         fprintf(stderr, "invalid value for JSON_REAL_PRECISION: %d\n",
                 precision);
         return 2;
@@ -302,17 +318,20 @@ int use_env()
     if(precision > 0)
         flags |= JSON_REAL_PRECISION(precision);
 
-    if(getenv_int("STRIP")) {
+    if(getenv_int("STRIP"))
+    {
         /* Load to memory, strip leading and trailing whitespace */
         size_t size = 0, used = 0;
         char *buffer = NULL, *buf_ck = NULL;
 
-        while(1) {
+        while(1)
+        {
             size_t count;
 
             size = (size == 0 ? 128 : size * 2);
             buf_ck = realloc(buffer, size);
-            if(!buf_ck) {
+            if(!buf_ck)
+            {
                 fprintf(stderr, "Unable to allocate %d bytes\n", (int)size);
                 free(buffer);
                 return 1;
@@ -320,7 +339,8 @@ int use_env()
             buffer = buf_ck;
 
             count = fread(buffer + used, 1, size - used, stdin);
-            if(count < size - used) {
+            if(count < size - used)
+            {
                 buffer[used + count] = '\0';
                 break;
             }
@@ -333,10 +353,11 @@ int use_env()
     else
         json = json_loadf(stdin, 0, &error);
 
-    if(!json) {
+    if(!json)
+    {
         fprintf(stderr, "%d %d %d\n%s\n",
-            error.line, error.column,
-            error.position, error.text);
+                error.line, error.column,
+                error.position, error.text);
         return 1;
     }
 
@@ -351,15 +372,17 @@ int main(int argc, char *argv[])
     int i;
     char *test_path = NULL;
 
-    #ifdef HAVE_SETLOCALE
+#ifdef HAVE_SETLOCALE
     setlocale(LC_ALL, "");
-    #endif
+#endif
 
-    if (argc < 2) {
+    if (argc < 2)
+    {
         goto usage;
     }
 
-    for (i = 1; i < argc; i++) {
+    for (i = 1; i < argc; i++)
+    {
         if (!strcmp(argv[i], "--strip"))
             conf.strip = 1;
         else if (!strcmp(argv[i], "--env"))

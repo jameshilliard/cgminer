@@ -62,12 +62,12 @@
 #if @REPLACE_NULL@
 # undef NULL
 # ifdef __cplusplus
-   /* ISO C++ says that the macro NULL must expand to an integer constant
-      expression, hence '((void *) 0)' is not allowed in C++.  */
+/* ISO C++ says that the macro NULL must expand to an integer constant
+   expression, hence '((void *) 0)' is not allowed in C++.  */
 #  if __GNUG__ >= 3
-    /* GNU C++ has a __null macro that behaves like an integer ('int' or
-       'long') but has the same size as a pointer.  Use that, to avoid
-       warnings.  */
+/* GNU C++ has a __null macro that behaves like an integer ('int' or
+   'long') but has the same size as a pointer.  Use that, to avoid
+   warnings.  */
 #   define NULL __null
 #  else
 #   define NULL 0L

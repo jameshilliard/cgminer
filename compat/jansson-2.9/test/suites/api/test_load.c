@@ -34,7 +34,8 @@ static void file_not_found()
         fail("json_load_file returned an invalid error message");
 }
 
-static void very_long_file_name() {
+static void very_long_file_name()
+{
     json_t *json;
     json_error_t error;
 

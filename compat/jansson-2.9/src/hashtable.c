@@ -171,13 +171,14 @@ static int hashtable_do_rehash(hashtable_t *hashtable)
     for(i = 0; i < hashsize(hashtable->order); i++)
     {
         hashtable->buckets[i].first = hashtable->buckets[i].last =
-            &hashtable->list;
+                                          &hashtable->list;
     }
 
     list = hashtable->list.next;
     list_init(&hashtable->list);
 
-    for(; list != &hashtable->list; list = next) {
+    for(; list != &hashtable->list; list = next)
+    {
         next = list->next;
         pair = list_to_pair(list);
         index = pair->hash % new_size;
@@ -204,7 +205,7 @@ int hashtable_init(hashtable_t *hashtable)
     for(i = 0; i < hashsize(hashtable->order); i++)
     {
         hashtable->buckets[i].first = hashtable->buckets[i].last =
-            &hashtable->list;
+                                          &hashtable->list;
     }
 
     return 0;
@@ -244,7 +245,8 @@ int hashtable_set(hashtable_t *hashtable, const char *key, json_t *value)
            allocated. */
 
         size_t len = strlen(key);
-        if(len >= (size_t)-1 - offsetof(pair_t, key)) {
+        if(len >= (size_t)-1 - offsetof(pair_t, key))
+        {
             /* Avoid an overflow if the key is very long */
             return -1;
         }
@@ -298,7 +300,7 @@ void hashtable_clear(hashtable_t *hashtable)
     for(i = 0; i < hashsize(hashtable->order); i++)
     {
         hashtable->buckets[i].first = hashtable->buckets[i].last =
-            &hashtable->list;
+                                          &hashtable->list;
     }
 
     list_init(&hashtable->list);

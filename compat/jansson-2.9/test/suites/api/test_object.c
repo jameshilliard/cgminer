@@ -155,7 +155,8 @@ static void test_set_many_keys()
         fail("unable to create string");
 
     buf[1] = '\0';
-    for (i = 0; i < strlen(keys); i++) {
+    for (i = 0; i < strlen(keys); i++)
+    {
         buf[0] = keys[i];
         if (json_object_set(object, buf, value))
             fail("unable to set object key");
@@ -494,7 +495,8 @@ static void test_preserve_order()
 
     result = json_dumps(object, JSON_PRESERVE_ORDER);
 
-    if(strcmp(expected, result) != 0) {
+    if(strcmp(expected, result) != 0)
+    {
         fprintf(stderr, "%s != %s", expected, result);
         fail("JSON_PRESERVE_ORDER doesn't work");
     }
@@ -512,7 +514,7 @@ static void test_object_foreach()
     object2 = json_object();
 
     json_object_foreach(object1, key, value)
-        json_object_set(object2, key, value);
+    json_object_set(object2, key, value);
 
     if(!json_equal(object1, object2))
         fail("json_object_foreach failed to iterate all key-value pairs");
@@ -529,7 +531,8 @@ static void test_object_foreach_safe()
 
     object = json_pack("{sisisi}", "foo", 1, "bar", 2, "baz", 3);
 
-    json_object_foreach_safe(object, tmp, key, value) {
+    json_object_foreach_safe(object, tmp, key, value)
+    {
         json_object_del(object, key);
     }
 

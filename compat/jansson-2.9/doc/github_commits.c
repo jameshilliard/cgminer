@@ -66,7 +66,8 @@ static char *request(const char *url)
     if(!data)
         goto error;
 
-    struct write_result write_result = {
+    struct write_result write_result =
+    {
         .data = data,
         .pos = 0
     };

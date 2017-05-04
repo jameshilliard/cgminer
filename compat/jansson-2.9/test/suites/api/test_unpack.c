@@ -302,7 +302,8 @@ static void run_tests()
     if(!json_unpack_ex(j, &error, 0, "{s:s,s:s!}", "foo", &s, "foo", &s))
         fail("json_unpack object with strict validation failed");
     {
-        const char *possible_errors[] = {
+        const char *possible_errors[] =
+        {
             "2 object item(s) left unpacked: baz, quux",
             "2 object item(s) left unpacked: quux, baz"
         };

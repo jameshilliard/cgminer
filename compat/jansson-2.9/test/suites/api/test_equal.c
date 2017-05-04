@@ -155,17 +155,17 @@ static void test_equal_complex()
     json_t *value1, *value2;
 
     const char *complex_json =
-"{"
-"    \"integer\": 1, "
-"    \"real\": 3.141592, "
-"    \"string\": \"foobar\", "
-"    \"true\": true, "
-"    \"object\": {"
-"        \"array-in-object\": [1,true,\"foo\",{}],"
-"        \"object-in-object\": {\"foo\": \"bar\"}"
-"    },"
-"    \"array\": [\"foo\", false, null, 1.234]"
-"}";
+        "{"
+        "    \"integer\": 1, "
+        "    \"real\": 3.141592, "
+        "    \"string\": \"foobar\", "
+        "    \"true\": true, "
+        "    \"object\": {"
+        "        \"array-in-object\": [1,true,\"foo\",{}],"
+        "        \"object-in-object\": {\"foo\": \"bar\"}"
+        "    },"
+        "    \"array\": [\"foo\", false, null, 1.234]"
+        "}";
 
     value1 = json_loads(complex_json, 0, NULL);
     value2 = json_loads(complex_json, 0, NULL);

@@ -42,13 +42,13 @@ static void encode_twice()
     json = json_object();
     result = json_dumps(json, 0);
     if(!result || strcmp(result, "{}"))
-      fail("json_dumps failed");
+        fail("json_dumps failed");
     free(result);
 
     json_object_set_new(json, "foo", json_integer(5));
     result = json_dumps(json, 0);
     if(!result || strcmp(result, "{\"foo\": 5}"))
-      fail("json_dumps failed");
+        fail("json_dumps failed");
     free(result);
 
     json_decref(json);
@@ -56,13 +56,13 @@ static void encode_twice()
     json = json_array();
     result = json_dumps(json, 0);
     if(!result || strcmp(result, "[]"))
-      fail("json_dumps failed");
+        fail("json_dumps failed");
     free(result);
 
     json_array_append_new(json, json_integer(5));
     result = json_dumps(json, 0);
     if(!result || strcmp(result, "[5]"))
-      fail("json_dumps failed");
+        fail("json_dumps failed");
     free(result);
 
     json_decref(json);

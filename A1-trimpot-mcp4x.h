@@ -5,12 +5,13 @@
 #include <stdbool.h>
 
 
-struct mcp4x {
-	uint16_t (*get_wiper)(struct mcp4x *me, uint8_t id);
-	bool (*set_wiper)(struct mcp4x *me, uint8_t id, uint16_t w);
-	void (*exit)(struct mcp4x *me);
-	uint8_t addr;
-	int file;
+struct mcp4x
+{
+    uint16_t (*get_wiper)(struct mcp4x *me, uint8_t id);
+    bool (*set_wiper)(struct mcp4x *me, uint8_t id, uint16_t w);
+    void (*exit)(struct mcp4x *me);
+    uint8_t addr;
+    int file;
 };
 
 /* constructor */

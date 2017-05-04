@@ -66,18 +66,18 @@
 #   define memchr rpl_memchr
 #  endif
 _GL_FUNCDECL_RPL (memchr, void *, (void const *__s, int __c, size_t __n)
-                                  _GL_ATTRIBUTE_PURE
-                                  _GL_ARG_NONNULL ((1)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (memchr, void *, (void const *__s, int __c, size_t __n));
 # else
 #  if ! @HAVE_MEMCHR@
 _GL_FUNCDECL_SYS (memchr, void *, (void const *__s, int __c, size_t __n)
-                                  _GL_ATTRIBUTE_PURE
-                                  _GL_ARG_NONNULL ((1)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1)));
 #  endif
-  /* On some systems, this function is defined as an overloaded function:
-       extern "C" { const void * std::memchr (const void *, int, size_t); }
-       extern "C++" { void * std::memchr (void *, int, size_t); }  */
+/* On some systems, this function is defined as an overloaded function:
+     extern "C" { const void * std::memchr (const void *, int, size_t); }
+     extern "C++" { void * std::memchr (void *, int, size_t); }  */
 _GL_CXXALIAS_SYS_CAST2 (memchr,
                         void *, (void const *__s, int __c, size_t __n),
                         void const *, (void const *__s, int __c, size_t __n));
@@ -158,12 +158,12 @@ _GL_WARN_ON_USE (mempcpy, "mempcpy is unportable - "
 #if @GNULIB_MEMRCHR@
 # if ! @HAVE_DECL_MEMRCHR@
 _GL_FUNCDECL_SYS (memrchr, void *, (void const *, int, size_t)
-                                   _GL_ATTRIBUTE_PURE
-                                   _GL_ARG_NONNULL ((1)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1)));
 # endif
-  /* On some systems, this function is defined as an overloaded function:
-       extern "C++" { const void * std::memrchr (const void *, int, size_t); }
-       extern "C++" { void * std::memrchr (void *, int, size_t); }  */
+/* On some systems, this function is defined as an overloaded function:
+     extern "C++" { const void * std::memrchr (const void *, int, size_t); }
+     extern "C++" { void * std::memrchr (void *, int, size_t); }  */
 _GL_CXXALIAS_SYS_CAST2 (memrchr,
                         void *, (void const *, int, size_t),
                         void const *, (void const *, int, size_t));
@@ -188,12 +188,12 @@ _GL_WARN_ON_USE (memrchr, "memrchr is unportable - "
 #if @GNULIB_RAWMEMCHR@
 # if ! @HAVE_RAWMEMCHR@
 _GL_FUNCDECL_SYS (rawmemchr, void *, (void const *__s, int __c_in)
-                                     _GL_ATTRIBUTE_PURE
-                                     _GL_ARG_NONNULL ((1)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1)));
 # endif
-  /* On some systems, this function is defined as an overloaded function:
-       extern "C++" { const void * std::rawmemchr (const void *, int); }
-       extern "C++" { void * std::rawmemchr (void *, int); }  */
+/* On some systems, this function is defined as an overloaded function:
+     extern "C++" { const void * std::rawmemchr (const void *, int); }
+     extern "C++" { void * std::rawmemchr (void *, int); }  */
 _GL_CXXALIAS_SYS_CAST2 (rawmemchr,
                         void *, (void const *__s, int __c_in),
                         void const *, (void const *__s, int __c_in));
@@ -282,19 +282,19 @@ _GL_WARN_ON_USE (strchr, "strchr cannot work correctly on character strings "
 #   define strchrnul rpl_strchrnul
 #  endif
 _GL_FUNCDECL_RPL (strchrnul, char *, (const char *__s, int __c_in)
-                                     _GL_ATTRIBUTE_PURE
-                                     _GL_ARG_NONNULL ((1)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (strchrnul, char *,
                   (const char *str, int ch));
 # else
 #  if ! @HAVE_STRCHRNUL@
 _GL_FUNCDECL_SYS (strchrnul, char *, (char const *__s, int __c_in)
-                                     _GL_ATTRIBUTE_PURE
-                                     _GL_ARG_NONNULL ((1)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1)));
 #  endif
-  /* On some systems, this function is defined as an overloaded function:
-       extern "C++" { const char * std::strchrnul (const char *, int); }
-       extern "C++" { char * std::strchrnul (char *, int); }  */
+/* On some systems, this function is defined as an overloaded function:
+     extern "C++" { const char * std::strchrnul (const char *, int); }
+     extern "C++" { char * std::strchrnul (char *, int); }  */
 _GL_CXXALIAS_SYS_CAST2 (strchrnul,
                         char *, (char const *__s, int __c_in),
                         char const *, (char const *__s, int __c_in));
@@ -325,7 +325,7 @@ _GL_FUNCDECL_RPL (strdup, char *, (char const *__s) _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (strdup, char *, (char const *__s));
 # else
 #  if defined __cplusplus && defined GNULIB_NAMESPACE && defined strdup
-    /* strdup exists as a function and as a macro.  Get rid of the macro.  */
+/* strdup exists as a function and as a macro.  Get rid of the macro.  */
 #   undef strdup
 #  endif
 #  if !(@HAVE_DECL_STRDUP@ || defined strdup)
@@ -350,7 +350,7 @@ _GL_WARN_ON_USE (strdup, "strdup is unportable - "
 #   define strncat rpl_strncat
 #  endif
 _GL_FUNCDECL_RPL (strncat, char *, (char *dest, const char *src, size_t n)
-                                   _GL_ARG_NONNULL ((1, 2)));
+                  _GL_ARG_NONNULL ((1, 2)));
 _GL_CXXALIAS_RPL (strncat, char *, (char *dest, const char *src, size_t n));
 # else
 _GL_CXXALIAS_SYS (strncat, char *, (char *dest, const char *src, size_t n));
@@ -372,12 +372,12 @@ _GL_WARN_ON_USE (strncat, "strncat is unportable - "
 #   define strndup rpl_strndup
 #  endif
 _GL_FUNCDECL_RPL (strndup, char *, (char const *__string, size_t __n)
-                                   _GL_ARG_NONNULL ((1)));
+                  _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (strndup, char *, (char const *__string, size_t __n));
 # else
 #  if ! @HAVE_DECL_STRNDUP@
 _GL_FUNCDECL_SYS (strndup, char *, (char const *__string, size_t __n)
-                                   _GL_ARG_NONNULL ((1)));
+                  _GL_ARG_NONNULL ((1)));
 #  endif
 _GL_CXXALIAS_SYS (strndup, char *, (char const *__string, size_t __n));
 # endif
@@ -400,14 +400,14 @@ _GL_WARN_ON_USE (strndup, "strndup is unportable - "
 #   define strnlen rpl_strnlen
 #  endif
 _GL_FUNCDECL_RPL (strnlen, size_t, (char const *__string, size_t __maxlen)
-                                   _GL_ATTRIBUTE_PURE
-                                   _GL_ARG_NONNULL ((1)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (strnlen, size_t, (char const *__string, size_t __maxlen));
 # else
 #  if ! @HAVE_DECL_STRNLEN@
 _GL_FUNCDECL_SYS (strnlen, size_t, (char const *__string, size_t __maxlen)
-                                   _GL_ATTRIBUTE_PURE
-                                   _GL_ARG_NONNULL ((1)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1)));
 #  endif
 _GL_CXXALIAS_SYS (strnlen, size_t, (char const *__string, size_t __maxlen));
 # endif
@@ -436,12 +436,12 @@ _GL_WARN_ON_USE (strcspn, "strcspn cannot work correctly on character strings "
 #if @GNULIB_STRPBRK@
 # if ! @HAVE_STRPBRK@
 _GL_FUNCDECL_SYS (strpbrk, char *, (char const *__s, char const *__accept)
-                                   _GL_ATTRIBUTE_PURE
-                                   _GL_ARG_NONNULL ((1, 2)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1, 2)));
 # endif
-  /* On some systems, this function is defined as an overloaded function:
-       extern "C" { const char * strpbrk (const char *, const char *); }
-       extern "C++" { char * strpbrk (char *, const char *); }  */
+/* On some systems, this function is defined as an overloaded function:
+     extern "C" { const char * strpbrk (const char *, const char *); }
+     extern "C++" { char * strpbrk (char *, const char *); }  */
 _GL_CXXALIAS_SYS_CAST2 (strpbrk,
                         char *, (char const *__s, char const *__accept),
                         const char *, (char const *__s, char const *__accept));
@@ -536,13 +536,13 @@ _GL_WARN_ON_USE (strsep, "strsep is unportable - "
 #   define strstr rpl_strstr
 #  endif
 _GL_FUNCDECL_RPL (strstr, char *, (const char *haystack, const char *needle)
-                                  _GL_ATTRIBUTE_PURE
-                                  _GL_ARG_NONNULL ((1, 2)));
+                  _GL_ATTRIBUTE_PURE
+                  _GL_ARG_NONNULL ((1, 2)));
 _GL_CXXALIAS_RPL (strstr, char *, (const char *haystack, const char *needle));
 # else
-  /* On some systems, this function is defined as an overloaded function:
-       extern "C++" { const char * strstr (const char *, const char *); }
-       extern "C++" { char * strstr (char *, const char *); }  */
+/* On some systems, this function is defined as an overloaded function:
+     extern "C++" { const char * strstr (const char *, const char *); }
+     extern "C++" { char * strstr (char *, const char *); }  */
 _GL_CXXALIAS_SYS_CAST2 (strstr,
                         char *, (const char *haystack, const char *needle),
                         const char *, (const char *haystack, const char *needle));
@@ -589,9 +589,9 @@ _GL_FUNCDECL_SYS (strcasestr, char *,
                   _GL_ATTRIBUTE_PURE
                   _GL_ARG_NONNULL ((1, 2)));
 #  endif
-  /* On some systems, this function is defined as an overloaded function:
-       extern "C++" { const char * strcasestr (const char *, const char *); }
-       extern "C++" { char * strcasestr (char *, const char *); }  */
+/* On some systems, this function is defined as an overloaded function:
+     extern "C++" { const char * strcasestr (const char *, const char *); }
+     extern "C++" { char * strcasestr (char *, const char *); }  */
 _GL_CXXALIAS_SYS_CAST2 (strcasestr,
                         char *, (const char *haystack, const char *needle),
                         const char *, (const char *haystack, const char *needle));
@@ -708,7 +708,7 @@ _GL_CXXALIASWARN (mbslen);
 /* Return the number of multibyte characters in the character string starting
    at STRING and ending at STRING + LEN.  */
 _GL_EXTERN_C size_t mbsnlen (const char *string, size_t len)
-     _GL_ARG_NONNULL ((1));
+_GL_ARG_NONNULL ((1));
 #endif
 
 #if @GNULIB_MBSCHR@
@@ -721,11 +721,11 @@ _GL_EXTERN_C size_t mbsnlen (const char *string, size_t len)
 #   define mbschr rpl_mbschr /* avoid collision with HP-UX function */
 #  endif
 _GL_FUNCDECL_RPL (mbschr, char *, (const char *string, int c)
-                                  _GL_ARG_NONNULL ((1)));
+                  _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (mbschr, char *, (const char *string, int c));
 # else
 _GL_FUNCDECL_SYS (mbschr, char *, (const char *string, int c)
-                                  _GL_ARG_NONNULL ((1)));
+                  _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_SYS (mbschr, char *, (const char *string, int c));
 # endif
 _GL_CXXALIASWARN (mbschr);
@@ -741,11 +741,11 @@ _GL_CXXALIASWARN (mbschr);
 #   define mbsrchr rpl_mbsrchr /* avoid collision with system function */
 #  endif
 _GL_FUNCDECL_RPL (mbsrchr, char *, (const char *string, int c)
-                                   _GL_ARG_NONNULL ((1)));
+                  _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_RPL (mbsrchr, char *, (const char *string, int c));
 # else
 _GL_FUNCDECL_SYS (mbsrchr, char *, (const char *string, int c)
-                                   _GL_ARG_NONNULL ((1)));
+                  _GL_ARG_NONNULL ((1)));
 _GL_CXXALIAS_SYS (mbsrchr, char *, (const char *string, int c));
 # endif
 _GL_CXXALIASWARN (mbsrchr);
@@ -757,7 +757,7 @@ _GL_CXXALIASWARN (mbsrchr);
    Unlike strstr(), this function works correctly in multibyte locales with
    encodings different from UTF-8.  */
 _GL_EXTERN_C char * mbsstr (const char *haystack, const char *needle)
-     _GL_ARG_NONNULL ((1, 2));
+_GL_ARG_NONNULL ((1, 2));
 #endif
 
 #if @GNULIB_MBSCASECMP@
@@ -768,7 +768,7 @@ _GL_EXTERN_C char * mbsstr (const char *haystack, const char *needle)
    different lengths!
    Unlike strcasecmp(), this function works correctly in multibyte locales.  */
 _GL_EXTERN_C int mbscasecmp (const char *s1, const char *s2)
-     _GL_ARG_NONNULL ((1, 2));
+_GL_ARG_NONNULL ((1, 2));
 #endif
 
 #if @GNULIB_MBSNCASECMP@
@@ -782,7 +782,7 @@ _GL_EXTERN_C int mbscasecmp (const char *s1, const char *s2)
    Unlike strncasecmp(), this function works correctly in multibyte locales.
    But beware that N is not a byte count but a character count!  */
 _GL_EXTERN_C int mbsncasecmp (const char *s1, const char *s2, size_t n)
-     _GL_ARG_NONNULL ((1, 2));
+_GL_ARG_NONNULL ((1, 2));
 #endif
 
 #if @GNULIB_MBSPCASECMP@
@@ -795,7 +795,7 @@ _GL_EXTERN_C int mbsncasecmp (const char *s1, const char *s2, size_t n)
    Unlike strncasecmp(), this function works correctly in multibyte
    locales.  */
 _GL_EXTERN_C char * mbspcasecmp (const char *string, const char *prefix)
-     _GL_ARG_NONNULL ((1, 2));
+_GL_ARG_NONNULL ((1, 2));
 #endif
 
 #if @GNULIB_MBSCASESTR@
@@ -805,7 +805,7 @@ _GL_EXTERN_C char * mbspcasecmp (const char *string, const char *prefix)
    strlen (haystack) < strlen (needle) !
    Unlike strcasestr(), this function works correctly in multibyte locales.  */
 _GL_EXTERN_C char * mbscasestr (const char *haystack, const char *needle)
-     _GL_ARG_NONNULL ((1, 2));
+_GL_ARG_NONNULL ((1, 2));
 #endif
 
 #if @GNULIB_MBSCSPN@
@@ -815,7 +815,7 @@ _GL_EXTERN_C char * mbscasestr (const char *haystack, const char *needle)
    if none exists.
    Unlike strcspn(), this function works correctly in multibyte locales.  */
 _GL_EXTERN_C size_t mbscspn (const char *string, const char *accept)
-     _GL_ARG_NONNULL ((1, 2));
+_GL_ARG_NONNULL ((1, 2));
 #endif
 
 #if @GNULIB_MBSPBRK@
@@ -828,11 +828,11 @@ _GL_EXTERN_C size_t mbscspn (const char *string, const char *accept)
 #   define mbspbrk rpl_mbspbrk /* avoid collision with HP-UX function */
 #  endif
 _GL_FUNCDECL_RPL (mbspbrk, char *, (const char *string, const char *accept)
-                                   _GL_ARG_NONNULL ((1, 2)));
+                  _GL_ARG_NONNULL ((1, 2)));
 _GL_CXXALIAS_RPL (mbspbrk, char *, (const char *string, const char *accept));
 # else
 _GL_FUNCDECL_SYS (mbspbrk, char *, (const char *string, const char *accept)
-                                   _GL_ARG_NONNULL ((1, 2)));
+                  _GL_ARG_NONNULL ((1, 2)));
 _GL_CXXALIAS_SYS (mbspbrk, char *, (const char *string, const char *accept));
 # endif
 _GL_CXXALIASWARN (mbspbrk);
@@ -845,7 +845,7 @@ _GL_CXXALIASWARN (mbspbrk);
    if none exists.
    Unlike strspn(), this function works correctly in multibyte locales.  */
 _GL_EXTERN_C size_t mbsspn (const char *string, const char *reject)
-     _GL_ARG_NONNULL ((1, 2));
+_GL_ARG_NONNULL ((1, 2));
 #endif
 
 #if @GNULIB_MBSSEP@
@@ -864,7 +864,7 @@ _GL_EXTERN_C size_t mbsspn (const char *string, const char *reject)
 
    See also mbstok_r().  */
 _GL_EXTERN_C char * mbssep (char **stringp, const char *delim)
-     _GL_ARG_NONNULL ((1, 2));
+_GL_ARG_NONNULL ((1, 2));
 #endif
 
 #if @GNULIB_MBSTOK_R@
@@ -885,7 +885,7 @@ _GL_EXTERN_C char * mbssep (char **stringp, const char *delim)
 
    See also mbssep().  */
 _GL_EXTERN_C char * mbstok_r (char *string, const char *delim, char **save_ptr)
-     _GL_ARG_NONNULL ((2, 3));
+_GL_ARG_NONNULL ((2, 3));
 #endif
 
 /* Map any int, typically from errno, into an error message.  */
@@ -917,12 +917,12 @@ _GL_WARN_ON_USE (strerror, "strerror is unportable - "
 #   define strerror_r rpl_strerror_r
 #  endif
 _GL_FUNCDECL_RPL (strerror_r, int, (int errnum, char *buf, size_t buflen)
-                                   _GL_ARG_NONNULL ((2)));
+                  _GL_ARG_NONNULL ((2)));
 _GL_CXXALIAS_RPL (strerror_r, int, (int errnum, char *buf, size_t buflen));
 # else
 #  if !@HAVE_DECL_STRERROR_R@
 _GL_FUNCDECL_SYS (strerror_r, int, (int errnum, char *buf, size_t buflen)
-                                   _GL_ARG_NONNULL ((2)));
+                  _GL_ARG_NONNULL ((2)));
 #  endif
 _GL_CXXALIAS_SYS (strerror_r, int, (int errnum, char *buf, size_t buflen));
 # endif
@@ -964,7 +964,7 @@ _GL_WARN_ON_USE (strsignal, "strsignal is unportable - "
 #if @GNULIB_STRVERSCMP@
 # if !@HAVE_STRVERSCMP@
 _GL_FUNCDECL_SYS (strverscmp, int, (const char *, const char *)
-                                   _GL_ARG_NONNULL ((1, 2)));
+                  _GL_ARG_NONNULL ((1, 2)));
 # endif
 _GL_CXXALIAS_SYS (strverscmp, int, (const char *, const char *));
 _GL_CXXALIASWARN (strverscmp);

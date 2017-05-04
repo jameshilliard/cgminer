@@ -10,7 +10,8 @@
 
 #include <stdlib.h>
 
-typedef struct {
+typedef struct
+{
     char *value;
     size_t length;   /* bytes used */
     size_t size;     /* bytes allocated */

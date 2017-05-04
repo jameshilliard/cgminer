@@ -79,7 +79,8 @@
 
 static void run_tests();
 
-int main() {
+int main()
+{
 #ifdef HAVE_SETLOCALE
     setlocale(LC_ALL, "");
 #endif

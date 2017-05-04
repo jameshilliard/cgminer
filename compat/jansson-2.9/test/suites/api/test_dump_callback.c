@@ -10,15 +10,18 @@
 #include <stdlib.h>
 #include "util.h"
 
-struct my_sink {
+struct my_sink
+{
     char *buf;
     size_t off;
     size_t cap;
 };
 
-static int my_writer(const char *buffer, size_t len, void *data) {
+static int my_writer(const char *buffer, size_t len, void *data)
+{
     struct my_sink *s = data;
-    if (len > s->cap - s->off) {
+    if (len > s->cap - s->off)
+    {
         return -1;
     }
     memcpy(s->buf + s->off, buffer, len);
@@ -34,12 +37,14 @@ static void run_tests()
     char *dumped_to_string;
 
     json = json_loads(str, 0, NULL);
-    if(!json) {
+    if(!json)
+    {
         fail("json_loads failed");
     }
 
     dumped_to_string = json_dumps(json, 0);
-    if (!dumped_to_string) {
+    if (!dumped_to_string)
+    {
         json_decref(json);
         fail("json_dumps failed");
     }
@@ -47,20 +52,23 @@ static void run_tests()
     s.off = 0;
     s.cap = strlen(dumped_to_string);
     s.buf = malloc(s.cap);
-    if (!s.buf) {
+    if (!s.buf)
+    {
         json_decref(json);
         free(dumped_to_string);
         fail("malloc failed");
     }
 
-    if (json_dump_callback(json, my_writer, &s, 0) == -1) {
+    if (json_dump_callback(json, my_writer, &s, 0) == -1)
+    {
         json_decref(json);
         free(dumped_to_string);
         free(s.buf);
         fail("json_dump_callback failed on an exact-length sink buffer");
     }
 
-    if (strncmp(dumped_to_string, s.buf, s.off) != 0) {
+    if (strncmp(dumped_to_string, s.buf, s.off) != 0)
+    {
         json_decref(json);
         free(dumped_to_string);
         free(s.buf);
@@ -68,7 +76,8 @@ static void run_tests()
     }
 
     s.off = 1;
-    if (json_dump_callback(json, my_writer, &s, 0) != -1) {
+    if (json_dump_callback(json, my_writer, &s, 0) != -1)
+    {
         json_decref(json);
         free(dumped_to_string);
         free(s.buf);

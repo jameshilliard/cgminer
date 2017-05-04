@@ -73,7 +73,8 @@ static void test_misc(void)
     if(!json_array_set(array, 2, seven))
         fail("able to set value out of bounds");
 
-    for(i = 2; i < 30; i++) {
+    for(i = 2; i < 30; i++)
+    {
         if(json_array_append(array, seven))
             fail("unable to append value");
 
@@ -81,7 +82,8 @@ static void test_misc(void)
             fail("wrong array size");
     }
 
-    for(i = 0; i < 30; i++) {
+    for(i = 0; i < 30; i++)
+    {
         value = json_array_get(array, i);
         if(!value)
             fail("unable to get item");
@@ -184,12 +186,14 @@ static void test_insert(void)
         fail("array size is invalid after insertion");
 
 
-    for(i = 0; i < 20; i++) {
+    for(i = 0; i < 20; i++)
+    {
         if(json_array_insert(array, 0, seven))
             fail("unable to insert value at the begining of an array");
     }
 
-    for(i = 0; i < 20; i++) {
+    for(i = 0; i < 20; i++)
+    {
         if(json_array_get(array, i) != seven)
             fail("json_aray_insert works incorrectly");
     }
@@ -257,7 +261,8 @@ static void test_remove(void)
     json_decref(array);
 
     array = json_array();
-    for(i = 0; i < 4; i++) {
+    for(i = 0; i < 4; i++)
+    {
         json_array_append(array, five);
         json_array_append(array, seven);
     }
@@ -286,11 +291,13 @@ static void test_clear(void)
     if(!five || !seven)
         fail("unable to create integer");
 
-    for(i = 0; i < 10; i++) {
+    for(i = 0; i < 10; i++)
+    {
         if(json_array_append(array, five))
             fail("unable to append");
     }
-    for(i = 0; i < 10; i++) {
+    for(i = 0; i < 10; i++)
+    {
         if(json_array_append(array, seven))
             fail("unable to append");
     }
@@ -324,11 +331,13 @@ static void test_extend(void)
     if(!five || !seven)
         fail("unable to create integer");
 
-    for(i = 0; i < 10; i++) {
+    for(i = 0; i < 10; i++)
+    {
         if(json_array_append(array1, five))
             fail("unable to append");
     }
-    for(i = 0; i < 10; i++) {
+    for(i = 0; i < 10; i++)
+    {
         if(json_array_append(array2, seven))
             fail("unable to append");
     }
@@ -339,11 +348,13 @@ static void test_extend(void)
     if(json_array_extend(array1, array2))
         fail("unable to extend");
 
-    for(i = 0; i < 10; i++) {
+    for(i = 0; i < 10; i++)
+    {
         if(json_array_get(array1, i) != five)
             fail("invalid array contents after extending");
     }
-    for(i = 10; i < 20; i++) {
+    for(i = 10; i < 20; i++)
+    {
         if(json_array_get(array1, i) != seven)
             fail("invalid array contents after extending");
     }
@@ -408,10 +419,11 @@ static void test_array_foreach()
     array1 = json_pack("[sisisi]", "foo", 1, "bar", 2, "baz", 3);
     array2 = json_array();
 
-    json_array_foreach(array1, index, value) {
+    json_array_foreach(array1, index, value)
+    {
         json_array_append(array2, value);
     }
-    
+
     if(!json_equal(array1, array2))
         fail("json_array_foreach failed to iterate all elements");
 

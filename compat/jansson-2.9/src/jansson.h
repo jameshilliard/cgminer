@@ -36,7 +36,8 @@ extern "C" {
 
 /* types */
 
-typedef enum {
+typedef enum
+{
     JSON_OBJECT,
     JSON_ARRAY,
     JSON_STRING,
@@ -47,7 +48,8 @@ typedef enum {
     JSON_NULL
 } json_type;
 
-typedef struct json_t {
+typedef struct json_t
+{
     json_type type;
     size_t refcount;
 } json_t;
@@ -116,9 +118,10 @@ void json_decref(json_t *json)
 static JSON_INLINE
 void json_decrefp(json_t **json)
 {
-    if(json) {
+    if(json)
+    {
         json_decref(*json);
-	*json = NULL;
+        *json = NULL;
     }
 }
 
@@ -131,7 +134,8 @@ void json_decrefp(json_t **json)
 #define JSON_ERROR_TEXT_LENGTH    160
 #define JSON_ERROR_SOURCE_LENGTH   80
 
-typedef struct {
+typedef struct
+{
     int line;
     int column;
     int position;
@@ -173,9 +177,9 @@ int json_object_iter_set_new(json_t *object, void *iter, json_t *value);
             n = json_object_iter_next(object, json_object_key_to_iter(key)))
 
 #define json_array_foreach(array, index, value) \
-	for(index = 0; \
-		index < json_array_size(array) && (value = json_array_get(array, index)); \
-		index++)
+    for(index = 0; \
+        index < json_array_size(array) && (value = json_array_get(array, index)); \
+        index++)
 
 static JSON_INLINE
 int json_object_set(json_t *object, const char *key, json_t *value)

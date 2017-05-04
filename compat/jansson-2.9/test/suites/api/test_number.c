@@ -21,14 +21,14 @@ static void test_inifity()
 {
     json_t *real = json_real(INFINITY);
     if (real != NULL)
-       fail("could construct a real from Inf");
+        fail("could construct a real from Inf");
 
     real = json_real(1.0);
     if (json_real_set(real, INFINITY) != -1)
-	    fail("could set a real to Inf");
+        fail("could set a real to Inf");
 
     if (json_real_value(real) != 1.0)
-       fail("real value changed unexpectedly");
+        fail("real value changed unexpectedly");
 
     json_decref(real);
 #ifdef _MSC_VER

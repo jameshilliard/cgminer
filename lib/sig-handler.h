@@ -30,15 +30,15 @@ static inline sa_handler_t
 get_handler (struct sigaction const *a)
 {
 #ifdef SA_SIGINFO
-  /* POSIX says that special values like SIG_IGN can only occur when
-     action.sa_flags does not contain SA_SIGINFO.  But in Linux 2.4,
-     for example, sa_sigaction and sa_handler are aliases and a signal
-     is ignored if sa_sigaction (after casting) equals SIG_IGN.  So
-     use (and cast) sa_sigaction in that case.  */
-  if (a->sa_flags & SA_SIGINFO)
-    return (sa_handler_t) a->sa_sigaction;
+    /* POSIX says that special values like SIG_IGN can only occur when
+       action.sa_flags does not contain SA_SIGINFO.  But in Linux 2.4,
+       for example, sa_sigaction and sa_handler are aliases and a signal
+       is ignored if sa_sigaction (after casting) equals SIG_IGN.  So
+       use (and cast) sa_sigaction in that case.  */
+    if (a->sa_flags & SA_SIGINFO)
+        return (sa_handler_t) a->sa_sigaction;
 #endif
-  return a->sa_handler;
+    return a->sa_handler;
 }
 
 #endif /* _GL_SIG_HANDLER_H */

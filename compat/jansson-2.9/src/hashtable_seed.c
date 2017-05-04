@@ -45,7 +45,8 @@
 #include "jansson.h"
 
 
-static uint32_t buf_to_uint32(char *data) {
+static uint32_t buf_to_uint32(char *data)
+{
     size_t i;
     uint32_t result = 0;
 
@@ -59,7 +60,8 @@ static uint32_t buf_to_uint32(char *data) {
 
 /* /dev/urandom */
 #if !defined(_WIN32) && defined(USE_URANDOM)
-static int seed_from_urandom(uint32_t *seed) {
+static int seed_from_urandom(uint32_t *seed)
+{
     /* Use unbuffered I/O if we have open(), close() and read(). Otherwise
        fall back to fopen() */
 
@@ -142,7 +144,8 @@ static int seed_from_windows_cryptoapi(uint32_t *seed)
 #endif
 
 /* gettimeofday() and getpid() */
-static int seed_from_timestamp_and_pid(uint32_t *seed) {
+static int seed_from_timestamp_and_pid(uint32_t *seed)
+{
 #ifdef HAVE_GETTIMEOFDAY
     /* XOR of seconds and microseconds */
     struct timeval tv;
@@ -163,7 +166,8 @@ static int seed_from_timestamp_and_pid(uint32_t *seed) {
     return 0;
 }
 
-static uint32_t generate_seed() {
+static uint32_t generate_seed()
+{
     uint32_t seed;
     int done = 0;
 
@@ -177,7 +181,8 @@ static uint32_t generate_seed() {
         done = 1;
 #endif
 
-    if (!done) {
+    if (!done)
+    {
         /* Fall back to timestamp and PID if no better randomness is
            available */
         seed_from_timestamp_and_pid(&seed);
@@ -196,32 +201,42 @@ volatile uint32_t hashtable_seed = 0;
 #if defined(HAVE_ATOMIC_BUILTINS) && (defined(HAVE_SCHED_YIELD) || !defined(_WIN32))
 static volatile char seed_initialized = 0;
 
-void json_object_seed(size_t seed) {
+void json_object_seed(size_t seed)
+{
     uint32_t new_seed = (uint32_t)seed;
 
-    if (hashtable_seed == 0) {
-        if (__atomic_test_and_set(&seed_initialized, __ATOMIC_RELAXED) == 0) {
+    if (hashtable_seed == 0)
+    {
+        if (__atomic_test_and_set(&seed_initialized, __ATOMIC_RELAXED) == 0)
+        {
             /* Do the seeding ourselves */
             if (new_seed == 0)
                 new_seed = generate_seed();
 
             __atomic_store_n(&hashtable_seed, new_seed, __ATOMIC_RELEASE);
-        } else {
+        }
+        else
+        {
             /* Wait for another thread to do the seeding */
-            do {
+            do
+            {
 #ifdef HAVE_SCHED_YIELD
                 sched_yield();
 #endif
-            } while(__atomic_load_n(&hashtable_seed, __ATOMIC_ACQUIRE) == 0);
+            }
+            while(__atomic_load_n(&hashtable_seed, __ATOMIC_ACQUIRE) == 0);
         }
     }
 }
 #elif defined(HAVE_SYNC_BUILTINS) && (defined(HAVE_SCHED_YIELD) || !defined(_WIN32))
-void json_object_seed(size_t seed) {
+void json_object_seed(size_t seed)
+{
     uint32_t new_seed = (uint32_t)seed;
 
-    if (hashtable_seed == 0) {
-        if (new_seed == 0) {
+    if (hashtable_seed == 0)
+    {
+        if (new_seed == 0)
+        {
             /* Explicit synchronization fences are not supported by the
                __sync builtins, so every thread getting here has to
                generate the seed value.
@@ -229,45 +244,59 @@ void json_object_seed(size_t seed) {
             new_seed = generate_seed();
         }
 
-        do {
-            if (__sync_bool_compare_and_swap(&hashtable_seed, 0, new_seed)) {
+        do
+        {
+            if (__sync_bool_compare_and_swap(&hashtable_seed, 0, new_seed))
+            {
                 /* We were the first to seed */
                 break;
-            } else {
+            }
+            else
+            {
                 /* Wait for another thread to do the seeding */
 #ifdef HAVE_SCHED_YIELD
                 sched_yield();
 #endif
             }
-        } while(hashtable_seed == 0);
+        }
+        while(hashtable_seed == 0);
     }
 }
 #elif defined(_WIN32)
 static long seed_initialized = 0;
-void json_object_seed(size_t seed) {
+void json_object_seed(size_t seed)
+{
     uint32_t new_seed = (uint32_t)seed;
 
-    if (hashtable_seed == 0) {
-        if (InterlockedIncrement(&seed_initialized) == 1) {
+    if (hashtable_seed == 0)
+    {
+        if (InterlockedIncrement(&seed_initialized) == 1)
+        {
             /* Do the seeding ourselves */
             if (new_seed == 0)
                 new_seed = generate_seed();
 
             hashtable_seed = new_seed;
-        } else {
+        }
+        else
+        {
             /* Wait for another thread to do the seeding */
-            do {
+            do
+            {
                 SwitchToThread();
-            } while (hashtable_seed == 0);
+            }
+            while (hashtable_seed == 0);
         }
     }
 }
 #else
 /* Fall back to a thread-unsafe version */
-void json_object_seed(size_t seed) {
+void json_object_seed(size_t seed)
+{
     uint32_t new_seed = (uint32_t)seed;
 
-    if (hashtable_seed == 0) {
+    if (hashtable_seed == 0)
+    {
         if (new_seed == 0)
             new_seed = generate_seed();
 

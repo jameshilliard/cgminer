@@ -30,11 +30,17 @@
 /* Work around nonstandard isnan() and isinf() implementations */
 #ifndef isnan
 #ifndef __sun
-static JSON_INLINE int isnan(double x) { return x != x; }
+static JSON_INLINE int isnan(double x)
+{
+    return x != x;
+}
 #endif
 #endif
 #ifndef isinf
-static JSON_INLINE int isinf(double x) { return !isnan(x) && isnan(x - x); }
+static JSON_INLINE int isinf(double x)
+{
+    return !isnan(x) && isnan(x - x);
+}
 #endif
 
 static JSON_INLINE void json_init(json_t *json, json_type type)
@@ -54,7 +60,8 @@ json_t *json_object(void)
     if(!object)
         return NULL;
 
-    if (!hashtable_seed) {
+    if (!hashtable_seed)
+    {
         /* Autoseed */
         json_object_seed(0);
     }
@@ -166,7 +173,8 @@ int json_object_update(json_t *object, json_t *other)
     if(!json_is_object(object) || !json_is_object(other))
         return -1;
 
-    json_object_foreach(other, key, value) {
+    json_object_foreach(other, key, value)
+    {
         if(json_object_set_nocheck(object, key, value))
             return -1;
     }
@@ -182,7 +190,8 @@ int json_object_update_existing(json_t *object, json_t *other)
     if(!json_is_object(object) || !json_is_object(other))
         return -1;
 
-    json_object_foreach(other, key, value) {
+    json_object_foreach(other, key, value)
+    {
         if(json_object_get(object, key))
             json_object_set_nocheck(object, key, value);
     }
@@ -198,7 +207,8 @@ int json_object_update_missing(json_t *object, json_t *other)
     if(!json_is_object(object) || !json_is_object(other))
         return -1;
 
-    json_object_foreach(other, key, value) {
+    json_object_foreach(other, key, value)
+    {
         if(!json_object_get(object, key))
             json_object_set_nocheck(object, key, value);
     }
@@ -280,7 +290,8 @@ static int json_object_equal(json_t *object1, json_t *object2)
     if(json_object_size(object1) != json_object_size(object2))
         return 0;
 
-    json_object_foreach(object1, key, value1) {
+    json_object_foreach(object1, key, value1)
+    {
         value2 = json_object_get(object2, key);
 
         if(!json_equal(value1, value2))
@@ -302,7 +313,7 @@ static json_t *json_object_copy(json_t *object)
         return NULL;
 
     json_object_foreach(object, key, value)
-        json_object_set_nocheck(result, key, value);
+    json_object_set_nocheck(result, key, value);
 
     return result;
 }
@@ -319,7 +330,8 @@ static json_t *json_object_deep_copy(const json_t *object)
     /* Cannot use json_object_foreach because object has to be cast
        non-const */
     iter = json_object_iter((json_t *)object);
-    while(iter) {
+    while(iter)
+    {
         const char *key;
         const json_t *value;
         key = json_object_iter_key(iter);
@@ -346,7 +358,8 @@ json_t *json_array(void)
     array->size = 8;
 
     array->table = jsonp_malloc(array->size * sizeof(json_t *));
-    if(!array->table) {
+    if(!array->table)
+    {
         jsonp_free(array);
         return NULL;
     }
@@ -447,7 +460,8 @@ static json_t **json_array_grow(json_array_t *array,
     array->size = new_size;
     array->table = new_table;
 
-    if(copy) {
+    if(copy)
+    {
         array_copy(array->table, 0, old_table, 0, array->entries);
         jsonp_free(old_table);
         return array->table;
@@ -470,7 +484,8 @@ int json_array_append_new(json_t *json, json_t *value)
     }
     array = json_to_array(json);
 
-    if(!json_array_grow(array, 1, 1)) {
+    if(!json_array_grow(array, 1, 1))
+    {
         json_decref(value);
         return -1;
     }
@@ -489,24 +504,28 @@ int json_array_insert_new(json_t *json, size_t index, json_t *value)
     if(!value)
         return -1;
 
-    if(!json_is_array(json) || json == value) {
+    if(!json_is_array(json) || json == value)
+    {
         json_decref(value);
         return -1;
     }
     array = json_to_array(json);
 
-    if(index > array->entries) {
+    if(index > array->entries)
+    {
         json_decref(value);
         return -1;
     }
 
     old_table = json_array_grow(array, 1, 0);
-    if(!old_table) {
+    if(!old_table)
+    {
         json_decref(value);
         return -1;
     }
 
-    if(old_table != array->table) {
+    if(old_table != array->table)
+    {
         array_copy(array->table, 0, old_table, 0, index);
         array_copy(array->table, index + 1, old_table, index,
                    array->entries - index);
@@ -645,14 +664,16 @@ static json_t *string_create(const char *value, size_t len, int own)
 
     if(own)
         v = (char *)value;
-    else {
+    else
+    {
         v = jsonp_strndup(value, len);
         if(!v)
             return NULL;
     }
 
     string = jsonp_malloc(sizeof(json_string_t));
-    if(!string) {
+    if(!string)
+    {
         if(!own)
             jsonp_free(v);
         return NULL;
@@ -931,7 +952,8 @@ void json_delete(json_t *json)
     if (!json)
         return;
 
-    switch(json_typeof(json)) {
+    switch(json_typeof(json))
+    {
         case JSON_OBJECT:
             json_delete_object(json_to_object(json));
             break;
@@ -969,7 +991,8 @@ int json_equal(json_t *json1, json_t *json2)
     if(json1 == json2)
         return 1;
 
-    switch(json_typeof(json1)) {
+    switch(json_typeof(json1))
+    {
         case JSON_OBJECT:
             return json_object_equal(json1, json2);
         case JSON_ARRAY:
@@ -993,7 +1016,8 @@ json_t *json_copy(json_t *json)
     if(!json)
         return NULL;
 
-    switch(json_typeof(json)) {
+    switch(json_typeof(json))
+    {
         case JSON_OBJECT:
             return json_object_copy(json);
         case JSON_ARRAY:
@@ -1020,13 +1044,14 @@ json_t *json_deep_copy(const json_t *json)
     if(!json)
         return NULL;
 
-    switch(json_typeof(json)) {
+    switch(json_typeof(json))
+    {
         case JSON_OBJECT:
             return json_object_deep_copy(json);
         case JSON_ARRAY:
             return json_array_deep_copy(json);
-            /* for the rest of the types, deep copying doesn't differ from
-               shallow copying */
+        /* for the rest of the types, deep copying doesn't differ from
+           shallow copying */
         case JSON_STRING:
             return json_string_copy(json);
         case JSON_INTEGER:

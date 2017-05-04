@@ -31,13 +31,15 @@
 #endif
 #endif
 
-typedef struct {
+typedef struct
+{
     json_t json;
     hashtable_t hashtable;
     int visited;
 } json_object_t;
 
-typedef struct {
+typedef struct
+{
     json_t json;
     size_t size;
     size_t entries;
@@ -45,18 +47,21 @@ typedef struct {
     int visited;
 } json_array_t;
 
-typedef struct {
+typedef struct
+{
     json_t json;
     char *value;
     size_t length;
 } json_string_t;
 
-typedef struct {
+typedef struct
+{
     json_t json;
     double value;
 } json_real_t;
 
-typedef struct {
+typedef struct
+{
     json_t json;
     json_int_t value;
 } json_integer_t;

@@ -104,7 +104,8 @@ static int dump_string(const char *str, size_t len, json_dump_callback_t dump, v
             pos = end;
         }
 
-        if(pos != str) {
+        if(pos != str)
+        {
             if(dump(str, pos - str, data))
                 return -1;
         }
@@ -116,14 +117,30 @@ static int dump_string(const char *str, size_t len, json_dump_callback_t dump, v
         length = 2;
         switch(codepoint)
         {
-            case '\\': text = "\\\\"; break;
-            case '\"': text = "\\\""; break;
-            case '\b': text = "\\b"; break;
-            case '\f': text = "\\f"; break;
-            case '\n': text = "\\n"; break;
-            case '\r': text = "\\r"; break;
-            case '\t': text = "\\t"; break;
-            case '/':  text = "\\/"; break;
+            case '\\':
+                text = "\\\\";
+                break;
+            case '\"':
+                text = "\\\"";
+                break;
+            case '\b':
+                text = "\\b";
+                break;
+            case '\f':
+                text = "\\f";
+                break;
+            case '\n':
+                text = "\\n";
+                break;
+            case '\r':
+                text = "\\r";
+                break;
+            case '\t':
+                text = "\\t";
+                break;
+            case '/':
+                text = "\\/";
+                break;
             default:
             {
                 /* codepoint is in BMP */
@@ -171,7 +188,8 @@ static int do_dump(const json_t *json, size_t flags, int depth,
     if(!json)
         return -1;
 
-    switch(json_typeof(json)) {
+    switch(json_typeof(json))
+    {
         case JSON_NULL:
             return dump("null", 4, data);
 
@@ -229,14 +247,16 @@ static int do_dump(const json_t *json, size_t flags, int depth,
 
             if(dump("[", 1, data))
                 goto array_error;
-            if(n == 0) {
+            if(n == 0)
+            {
                 array->visited = 0;
                 return dump("]", 1, data);
             }
             if(dump_indent(flags, depth + 1, 0, dump, data))
                 goto array_error;
 
-            for(i = 0; i < n; ++i) {
+            for(i = 0; i < n; ++i)
+            {
                 if(do_dump(json_array_get(json, i), flags, depth + 1,
                            dump, data))
                     goto array_error;
@@ -269,11 +289,13 @@ static int do_dump(const json_t *json, size_t flags, int depth,
             const char *separator;
             int separator_length;
 
-            if(flags & JSON_COMPACT) {
+            if(flags & JSON_COMPACT)
+            {
                 separator = ":";
                 separator_length = 1;
             }
-            else {
+            else
+            {
                 separator = ": ";
                 separator_length = 2;
             }
@@ -288,7 +310,8 @@ static int do_dump(const json_t *json, size_t flags, int depth,
 
             if(dump("{", 1, data))
                 goto object_error;
-            if(!iter) {
+            if(!iter)
+            {
                 object->visited = 0;
                 return dump("}", 1, data);
             }
@@ -437,9 +460,10 @@ int json_dump_file(const json_t *json, const char *path, size_t flags)
 
 int json_dump_callback(const json_t *json, json_dump_callback_t callback, void *data, size_t flags)
 {
-    if(!(flags & JSON_ENCODE_ANY)) {
+    if(!(flags & JSON_ENCODE_ANY))
+    {
         if(!json_is_array(json) && !json_is_object(json))
-           return -1;
+            return -1;
     }
 
     return do_dump(json, flags, 0, callback, data);

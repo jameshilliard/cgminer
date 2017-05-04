@@ -95,6 +95,10 @@ if HAS_HASHRATIO
 cgminer_SOURCES += driver-hashratio.c driver-hashratio.h
 endif
 
+if HAS_BITMAIN
+cgminer_SOURCES += driver-hashratio.c driver-hashratio.h
+endif
+
 if HAS_BITFURY
 cgminer_SOURCES += driver-bitfury.c driver-bitfury.h
 endif
@@ -110,6 +114,12 @@ cgminer_SOURCES += bf16-mspcontrol.c bf16-mspcontrol.h
 cgminer_SOURCES += bf16-spidevice.c bf16-spidevice.h
 cgminer_SOURCES += bf16-uartdevice.c bf16-uartdevice.h
 cgminer_SOURCES += driver-bitfury16.c driver-bitfury16.h
+endif
+
+if HAS_BITMAIN_SOC
+cgminer_SOURCES += driver-btm-soc.c driver-btm-soc.h
+cgminer_SOURCES += bitmain-board-test.c bitmain-board-test.h
+cgminer_SOURCES += sha2-soc.c sha2-soc.h
 endif
 
 if HAS_BITMINE_A1

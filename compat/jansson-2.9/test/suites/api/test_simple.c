@@ -197,33 +197,33 @@ static void run_tests()
     /* Test reference counting on singletons (true, false, null) */
     value = json_true();
     if(value->refcount != (size_t)-1)
-      fail("refcounting true works incorrectly");
+        fail("refcounting true works incorrectly");
     json_decref(value);
     if(value->refcount != (size_t)-1)
-      fail("refcounting true works incorrectly");
+        fail("refcounting true works incorrectly");
     json_incref(value);
     if(value->refcount != (size_t)-1)
-      fail("refcounting true works incorrectly");
+        fail("refcounting true works incorrectly");
 
     value = json_false();
     if(value->refcount != (size_t)-1)
-      fail("refcounting false works incorrectly");
+        fail("refcounting false works incorrectly");
     json_decref(value);
     if(value->refcount != (size_t)-1)
-      fail("refcounting false works incorrectly");
+        fail("refcounting false works incorrectly");
     json_incref(value);
     if(value->refcount != (size_t)-1)
-      fail("refcounting false works incorrectly");
+        fail("refcounting false works incorrectly");
 
     value = json_null();
     if(value->refcount != (size_t)-1)
-      fail("refcounting null works incorrectly");
+        fail("refcounting null works incorrectly");
     json_decref(value);
     if(value->refcount != (size_t)-1)
-      fail("refcounting null works incorrectly");
+        fail("refcounting null works incorrectly");
     json_incref(value);
     if(value->refcount != (size_t)-1)
-      fail("refcounting null works incorrectly");
+        fail("refcounting null works incorrectly");
 
 #ifdef json_auto_t
     value = json_string("foo");
@@ -234,7 +234,7 @@ static void run_tests()
             fail("value type check failed");
     }
     if(value->refcount != 1)
-	fail("automatic decrement failed");
+        fail("automatic decrement failed");
     json_decref(value);
 #endif
 }

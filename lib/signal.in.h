@@ -126,7 +126,7 @@ typedef int verify_NSIG_constraint[NSIG <= 32 ? 1 : -1];
 #  endif
 # else
 _GL_FUNCDECL_SYS (sigismember, int, (const sigset_t *set, int sig)
-                                    _GL_ARG_NONNULL ((1)));
+                  _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (sigismember, int, (const sigset_t *set, int sig));
 _GL_CXXALIASWARN (sigismember);
@@ -151,7 +151,7 @@ _GL_CXXALIASWARN (sigemptyset);
 #  endif
 # else
 _GL_FUNCDECL_SYS (sigaddset, int, (sigset_t *set, int sig)
-                                  _GL_ARG_NONNULL ((1)));
+                  _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (sigaddset, int, (sigset_t *set, int sig));
 _GL_CXXALIASWARN (sigaddset);
@@ -164,7 +164,7 @@ _GL_CXXALIASWARN (sigaddset);
 #  endif
 # else
 _GL_FUNCDECL_SYS (sigdelset, int, (sigset_t *set, int sig)
-                                  _GL_ARG_NONNULL ((1)));
+                  _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (sigdelset, int, (sigset_t *set, int sig));
 _GL_CXXALIASWARN (sigdelset);
@@ -292,22 +292,22 @@ _GL_WARN_ON_USE (sigprocmask, "sigprocmask is unportable - "
 /* Present to allow compilation, but unsupported by gnulib.  */
 union sigval
 {
-  int sival_int;
-  void *sival_ptr;
+    int sival_int;
+    void *sival_ptr;
 };
 
 /* Present to allow compilation, but unsupported by gnulib.  */
 struct siginfo_t
 {
-  int si_signo;
-  int si_code;
-  int si_errno;
-  pid_t si_pid;
-  uid_t si_uid;
-  void *si_addr;
-  int si_status;
-  long si_band;
-  union sigval si_value;
+    int si_signo;
+    int si_code;
+    int si_errno;
+    pid_t si_pid;
+    uid_t si_uid;
+    void *si_addr;
+    int si_status;
+    long si_band;
+    union sigval si_value;
 };
 typedef struct siginfo_t siginfo_t;
 
@@ -323,18 +323,18 @@ typedef struct siginfo_t siginfo_t;
 
 struct sigaction
 {
-  union
-  {
-    void (*_sa_handler) (int);
-    /* Present to allow compilation, but unsupported by gnulib.  POSIX
-       says that implementations may, but not must, make sa_sigaction
-       overlap with sa_handler, but we know of no implementation where
-       they do not overlap.  */
-    void (*_sa_sigaction) (int, siginfo_t *, void *);
-  } _sa_func;
-  sigset_t sa_mask;
-  /* Not all POSIX flags are supported.  */
-  int sa_flags;
+    union
+    {
+        void (*_sa_handler) (int);
+        /* Present to allow compilation, but unsupported by gnulib.  POSIX
+           says that implementations may, but not must, make sa_sigaction
+           overlap with sa_handler, but we know of no implementation where
+           they do not overlap.  */
+        void (*_sa_sigaction) (int, siginfo_t *, void *);
+    } _sa_func;
+    sigset_t sa_mask;
+    /* Not all POSIX flags are supported.  */
+    int sa_flags;
 };
 #   define sa_handler _sa_func._sa_handler
 #   define sa_sigaction _sa_func._sa_sigaction

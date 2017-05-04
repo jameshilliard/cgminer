@@ -11,7 +11,8 @@
 #include <stdlib.h>
 #include "jansson.h"
 
-struct hashtable_list {
+struct hashtable_list
+{
     struct hashtable_list *prev;
     struct hashtable_list *next;
 };
@@ -19,7 +20,8 @@ struct hashtable_list {
 /* "pair" may be a bit confusing a name, but think of it as a
    key-value pair. In this case, it just encodes some extra data,
    too */
-struct hashtable_pair {
+struct hashtable_pair
+{
     struct hashtable_list list;
     struct hashtable_list ordered_list;
     size_t hash;
@@ -27,12 +29,14 @@ struct hashtable_pair {
     char key[1];
 };
 
-struct hashtable_bucket {
+struct hashtable_bucket
+{
     struct hashtable_list *first;
     struct hashtable_list *last;
 };
 
-typedef struct hashtable {
+typedef struct hashtable
+{
     size_t size;
     struct hashtable_bucket *buckets;
     size_t order;  /* hashtable has pow(2, order) buckets */

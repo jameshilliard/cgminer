@@ -101,7 +101,8 @@ int strbuffer_append_bytes(strbuffer_t *strbuff, const char *data, size_t size)
 
 char strbuffer_pop(strbuffer_t *strbuff)
 {
-    if(strbuff->length > 0) {
+    if(strbuff->length > 0)
+    {
         char c = strbuff->value[--strbuff->length];
         strbuff->value[strbuff->length] = '\0';
         return c;
