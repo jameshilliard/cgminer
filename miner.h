@@ -258,7 +258,8 @@ static inline int fsync (int fd)
     DRIVER_ADD_COMMAND(bab) \
     DRIVER_ADD_COMMAND(minion) \
     DRIVER_ADD_COMMAND(sp10) \
-    DRIVER_ADD_COMMAND(sp30)
+    DRIVER_ADD_COMMAND(sp30) \
+    DRIVER_ADD_COMMAND(bitmain_soc)
 
 #define DRIVER_PARSE_COMMANDS(DRIVER_ADD_COMMAND) \
     FPGA_PARSE_COMMANDS(DRIVER_ADD_COMMAND) \
@@ -1202,6 +1203,19 @@ extern uint64_t best_diff;
 extern struct timeval block_timeval;
 extern char *workpadding;
 
+#ifdef USE_BITMAIN_SOC
+extern char displayed_hash_rate[16];
+#define NONCE_BUFF 4096
+extern char nonce_num10_string[NONCE_BUFF];
+extern char nonce_num30_string[NONCE_BUFF];
+extern char nonce_num60_string[NONCE_BUFF];
+extern double new_total_mhashes_done;
+extern double new_total_secs;
+extern time_t total_tv_start_sys;
+extern time_t total_tv_end_sys;
+extern void writeInitLogFile(char *logstr);
+#endif
+
 struct curl_ent
 {
     CURL *curl;
@@ -1322,6 +1336,11 @@ struct pool
     bool stratum_active;
     bool stratum_init;
     bool stratum_notify;
+#ifdef USE_BITMAIN_SOC
+    bool support_vil;
+    int version_num;
+    int version[4];
+#endif
     struct stratum_work swork;
     pthread_t stratum_sthread;
     pthread_t stratum_rthread;
@@ -1445,6 +1464,9 @@ struct work
     struct timeval  tv_work_start;
     struct timeval  tv_work_found;
     char        getwork_mode;
+#ifdef USE_BITMAIN_SOC
+    int version;
+#endif
 };
 
 #ifdef USE_MODMINER

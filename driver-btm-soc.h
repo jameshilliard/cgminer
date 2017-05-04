@@ -581,7 +581,7 @@ struct init_config
 
 
 
-struct bitmain_c5_info
+struct bitmain_soc_info
 {
     cglock_t update_lock;
 
@@ -610,7 +610,7 @@ struct bitmain_c5_info
     pthread_t read_nonce_thr;
     pthread_mutex_t lock;
 
-    struct init_config c5_config;
+    struct init_config soc_config;
     int pool_no;
     struct pool pool0;
     struct pool pool1;
@@ -902,11 +902,13 @@ extern bool opt_bitmain_new_cmd_type_vil;
 extern bool opt_fixed_freq;
 extern bool opt_pre_heat;
 extern int opt_bitmain_fan_pwm;
-extern int opt_bitmain_c5_freq;
-extern int opt_bitmain_c5_voltage;
+extern int opt_bitmain_soc_freq;
+extern int opt_bitmain_soc_voltage;
 extern int ADD_FREQ;
 extern int ADD_FREQ1;
 extern int fpga_version;
+extern int opt_multi_version;
+extern char g_miner_version[256];
 
 
 #endif

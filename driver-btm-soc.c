@@ -50,6 +50,10 @@
 #include "elist.h"
 #include "miner.h"
 // #include "usbutils.h"
+#include "util.h"
+#include "driver-btm-soc.h"
+#include "sha2-soc.h"
+
 
 #define MAX_CHAR_NUM    1024
 
@@ -132,11 +136,6 @@ static void hexdump(const uint8_t *p, unsigned int len)
     }
 }
 
-
-#include "util.h"
-#include "driver-btm-soc.h"
-#include "sha2-soc.h"
-
 #ifdef R4
 int MIN_PWM_PERCENT;
 int MID_PWM_PERCENT;
@@ -186,7 +185,7 @@ pthread_mutex_t opencore_readtemp_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 uint64_t h = 0;
 
-
+int opt_multi_version = 1;
 uint32_t given_id = 2;
 uint32_t c_coinbase_padding = 0;
 uint32_t c_merkles_num = 0;
@@ -196,8 +195,8 @@ int last_temperature = 0, temp_highest = 0;
 
 bool opt_bitmain_fan_ctrl = false;
 int opt_bitmain_fan_pwm = 0;
-int opt_bitmain_c5_freq = 600;
-int opt_bitmain_c5_voltage = 176;
+int opt_bitmain_soc_freq = 600;
+int opt_bitmain_soc_voltage = 176;
 int ADD_FREQ = 0;
 int ADD_FREQ1 = 0;
 uint8_t de_voltage = 176;
@@ -280,6 +279,7 @@ pthread_mutex_t init_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 bool isC5_CtrlBoard=false;
 bool isChainAllCoresOpened[BITMAIN_MAX_CHAIN_NUM]= {false}; // is all cores opened flag
+char g_miner_version[256] = {0};
 
 void set_led(bool stop);
 void open_core(bool nullwork_enable);
@@ -4818,7 +4818,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
 
     }
 
-    static void suffix_string_c5(uint64_t val, char *buf, size_t bufsiz, int sigdigits,bool display)
+    static void suffix_string_soc(uint64_t val, char *buf, size_t bufsiz, int sigdigits,bool display)
     {
         const double  dkilo = 1000.0;
         const uint64_t kilo = 1000ull;
@@ -5086,7 +5086,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                                     temp_hash_rate = (temp_hash_rate << 24);
                                     tmp_rate += temp_hash_rate;
 
-                                    suffix_string_c5(temp_hash_rate, displayed_rate_asic, sizeof(displayed_rate_asic), 6,false);
+                                    suffix_string_soc(temp_hash_rate, displayed_rate_asic, sizeof(displayed_rate_asic), 6,false);
                                     sprintf(logstr,"Asic[%02d]=%s ",read_num,displayed_rate_asic);
                                     writeLogFile(logstr);
 
@@ -5137,7 +5137,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                 if(read_num == dev->chain_asic_num[i])
                 {
                     rate[i] = tmp_rate;
-                    suffix_string_c5(rate[i], (char * )displayed_rate[i], sizeof(displayed_rate[i]), 6,false);
+                    suffix_string_soc(rate[i], (char * )displayed_rate[i], sizeof(displayed_rate[i]), 6,false);
                     rate_error[i] = 0;
 
                     //    sprintf(logstr,"%s: chain %d hashrate is %s\n", __FUNCTION__, i, displayed_rate[i]);
@@ -5150,7 +5150,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                     if(rate_error[i] > 3 || status_error)
                     {
                         rate[i] = 0;
-                        suffix_string_c5(rate[i], (char * )displayed_rate[i], sizeof(displayed_rate[i]), 6,false);
+                        suffix_string_soc(rate[i], (char * )displayed_rate[i], sizeof(displayed_rate[i]), 6,false);
                     }
                 }
                 //set_nonce_fifo_interrupt(get_nonce_fifo_interrupt() & ~(FLUSH_NONCE3_FIFO));
@@ -5350,7 +5350,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                 if(read_num == dev->chain_asic_num[i])
                 {
                     rate[i] = tmp_rate;
-                    suffix_string_c5(rate[i], (char * )displayed_rate[i], sizeof(displayed_rate[i]), 6,false);
+                    suffix_string_soc(rate[i], (char * )displayed_rate[i], sizeof(displayed_rate[i]), 6,false);
                     rate_error[i] = 0;
                     applog(LOG_DEBUG,"%s: chain %d hashrate is %s\n", __FUNCTION__, i, displayed_rate[i]);
                 }
@@ -5360,7 +5360,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                     if(rate_error[i] > 3 || status_error)
                     {
                         rate[i] = 0;
-                        suffix_string_c5(rate[i], (char * )displayed_rate[i], sizeof(displayed_rate[i]), 6,false);
+                        suffix_string_soc(rate[i], (char * )displayed_rate[i], sizeof(displayed_rate[i]), 6,false);
                     }
                 }
                 //set_nonce_fifo_interrupt(get_nonce_fifo_interrupt() & ~(FLUSH_NONCE3_FIFO));
@@ -9379,7 +9379,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         system("cp /tmp/lasttemp /tmp/err3.log -f");
     }
 
-    int bitmain_c5_init(struct init_config config)
+    int bitmain_soc_init(struct init_config config)
     {
         char ret=0,j;
         uint16_t crc = 0;
@@ -10480,7 +10480,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         startCheckNetworkJob=true;
     }
 
-    int parse_job_to_c5(unsigned char **buf,struct pool *pool,uint32_t id)
+    int parse_job_to_soc(unsigned char **buf,struct pool *pool,uint32_t id)
     {
         uint16_t crc = 0;
         uint32_t buf_len = 0;
@@ -10849,48 +10849,53 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         return 0;
     }
 
+
     static void copy_pool_stratum(struct pool *pool_stratum, struct pool *pool)
     {
         int i;
-        int merkles = pool->merkles;
+        int merkles = pool->merkles, job_id_len;
         size_t coinbase_len = pool->coinbase_len;
+        unsigned short crc;
 
         if (!pool->swork.job_id)
             return;
+
+        if (pool_stratum->swork.job_id)
+        {
+            job_id_len = strlen(pool->swork.job_id);
+            crc = crc16((unsigned char *)pool->swork.job_id, job_id_len);
+            job_id_len = strlen(pool_stratum->swork.job_id);
+
+            if (crc16((unsigned char *)pool_stratum->swork.job_id, job_id_len) == crc)
+                return;
+        }
 
         cg_wlock(&pool_stratum->data_lock);
         free(pool_stratum->swork.job_id);
         free(pool_stratum->nonce1);
         free(pool_stratum->coinbase);
 
-        align_len(&coinbase_len);
-        pool_stratum->coinbase = calloc(coinbase_len, 1);
-        if (unlikely(!pool_stratum->coinbase))
-            quit(1, "Failed to calloc pool_stratum coinbase in c5");
+        pool_stratum->coinbase = cgcalloc(coinbase_len, 1);
         memcpy(pool_stratum->coinbase, pool->coinbase, coinbase_len);
-
 
         for (i = 0; i < pool_stratum->merkles; i++)
             free(pool_stratum->swork.merkle_bin[i]);
         if (merkles)
         {
-            pool_stratum->swork.merkle_bin = realloc(pool_stratum->swork.merkle_bin,
+            pool_stratum->swork.merkle_bin = cgrealloc(pool_stratum->swork.merkle_bin,
                                              sizeof(char *) * merkles + 1);
             for (i = 0; i < merkles; i++)
             {
-                pool_stratum->swork.merkle_bin[i] = malloc(32);
-                if (unlikely(!pool_stratum->swork.merkle_bin[i]))
-                    quit(1, "Failed to malloc pool_stratum swork merkle_bin");
+                pool_stratum->swork.merkle_bin[i] = cgmalloc(32);
                 memcpy(pool_stratum->swork.merkle_bin[i], pool->swork.merkle_bin[i], 32);
             }
         }
-        pool_stratum->pool_no = pool->pool_no;
+
         pool_stratum->sdiff = pool->sdiff;
         pool_stratum->coinbase_len = pool->coinbase_len;
         pool_stratum->nonce2_offset = pool->nonce2_offset;
         pool_stratum->n2size = pool->n2size;
         pool_stratum->merkles = pool->merkles;
-
         pool_stratum->swork.job_id = strdup(pool->swork.job_id);
         pool_stratum->nonce1 = strdup(pool->nonce1);
 
@@ -10899,10 +10904,10 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         cg_wunlock(&pool_stratum->data_lock);
     }
 
-    static bool bitmain_c5_prepare(struct thr_info *thr)
+    static bool bitmain_soc_prepare(struct thr_info *thr)
     {
-        struct cgpu_info *bitmain_c5 = thr->cgpu;
-        struct bitmain_c5_info *info = bitmain_c5->device_data;
+        struct cgpu_info *bitmain_soc = thr->cgpu;
+        struct bitmain_soc_info *info = bitmain_soc->device_data;
 
         info->thr = thr;
         mutex_init(&info->lock);
@@ -10911,7 +10916,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         cglock_init(&info->pool1.data_lock);
         cglock_init(&info->pool2.data_lock);
 
-        struct init_config c5_config =
+        struct init_config soc_config =
         {
             .token_type                     = 0x51,
             .version                        = 0,
@@ -10933,7 +10938,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
             .asic_num                       = 54,
             .fan_pwm_percent                = opt_bitmain_fan_pwm,
             .temperature                    = 80,
-            .frequency                      = opt_bitmain_c5_freq,
+            .frequency                      = opt_bitmain_soc_freq,
             .voltage                        = {0x07,0x25},
             .chain_check_time_integer       = 10,
             .chain_check_time_fractions     = 10,
@@ -10945,14 +10950,14 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
             .chain_min_freq                 = 400,
             .chain_max_freq                 = 600,
         };
-        c5_config.crc = CRC16((uint8_t *)(&c5_config), sizeof(c5_config)-2);
+        soc_config.crc = CRC16((uint8_t *)(&soc_config), sizeof(soc_config)-2);
 
-        bitmain_c5_init(c5_config);
+        bitmain_soc_init(soc_config);
 
         return true;
     }
 
-    static void bitmain_c5_reinit_device(struct cgpu_info *bitmain)
+    static void bitmain_soc_reinit_device(struct cgpu_info *bitmain)
     {
         if(!status_error)
             system("/etc/init.d/bmminer.sh restart > /dev/null 2>&1 &");
@@ -10960,17 +10965,17 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
 
 
 
-    static void bitmain_c5_detect(__maybe_unused bool hotplug)
+    static void bitmain_soc_detect(__maybe_unused bool hotplug)
     {
         struct cgpu_info *cgpu = calloc(1, sizeof(*cgpu));
-        struct device_drv *drv = &bitmain_c5_drv;
-        struct bitmain_c5_info *a;
+        struct device_drv *drv = &bitmain_soc_drv;
+        struct bitmain_soc_info *a;
 
         assert(cgpu);
         cgpu->drv = drv;
         cgpu->deven = DEV_ENABLED;
         cgpu->threads = 1;
-        cgpu->device_data = calloc(sizeof(struct bitmain_c5_info), 1);
+        cgpu->device_data = calloc(sizeof(struct bitmain_soc_info), 1);
         if (unlikely(!(cgpu->device_data)))
             quit(1, "Failed to calloc cgpu_info data");
         a = cgpu->device_data;
@@ -11116,8 +11121,8 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
     void * bitmain_scanhash(void *arg)
     {
         struct thr_info *thr = (struct thr_info *)arg;
-        struct cgpu_info *bitmain_c5 = thr->cgpu;
-        struct bitmain_c5_info *info = bitmain_c5->device_data;
+        struct cgpu_info *bitmain_soc = thr->cgpu;
+        struct bitmain_soc_info *info = bitmain_soc->device_data;
         double device_tdiff, hwp;
         uint32_t a = 0, b = 0;
         static uint32_t last_nonce3 = 0;
@@ -11225,7 +11230,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         h = h * 0xffffffffull;
     }
 
-    static int64_t bitmain_c5_scanhash(struct thr_info *thr)
+    static int64_t bitmain_soc_scanhash(struct thr_info *thr)
     {
         h = 0;
         pthread_t send_id;
@@ -11234,10 +11239,10 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         return h;
     }
 
-    static void bitmain_c5_update(struct cgpu_info *bitmain_c5)
+    static void bitmain_soc_update(struct cgpu_info *bitmain_soc)
     {
-        struct bitmain_c5_info *info = bitmain_c5->device_data;
-        struct thr_info *thr = bitmain_c5->thr[0];
+        struct bitmain_soc_info *info = bitmain_soc->device_data;
+        struct thr_info *thr = bitmain_soc->thr[0];
         struct work *work;
         struct pool *pool;
         int i, count = 0;
@@ -11267,7 +11272,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
 
         copy_pool_stratum(&info->pool0, pool);
         info->pool0_given_id = ++given_id;
-        parse_job_to_c5(&buf, pool, info->pool0_given_id);
+        parse_job_to_soc(&buf, pool, info->pool0_given_id);
         /* Step 4: Send out buf */
         if(!status_error)
         {
@@ -11281,9 +11286,9 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         mutex_unlock(&info->lock);
     }
 
-    static void get_bitmain_statline_before(char *buf, size_t bufsiz, struct cgpu_info *bitmain_c5)
+    static void get_bitmain_statline_before(char *buf, size_t bufsiz, struct cgpu_info *bitmain_soc)
     {
-        struct bitmain_c5_info *info = bitmain_c5->device_data;
+        struct bitmain_soc_info *info = bitmain_soc->device_data;
     }
 
     void remove_dot_char(char *number)
@@ -11325,7 +11330,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
     static struct api_data *bitmain_api_stats(struct cgpu_info *cgpu)
     {
         struct api_data *root = NULL;
-        struct bitmain_c5_info *info = cgpu->device_data;
+        struct bitmain_soc_info *info = cgpu->device_data;
         char buf[64];
         int i = 0;
         uint64_t hash_rate_all = 0;
@@ -11745,7 +11750,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
             }
         }
 
-        suffix_string_c5(hash_rate_all, (char * )displayed_hash_rate, sizeof(displayed_hash_rate), 7,false);
+        suffix_string_soc(hash_rate_all, (char * )displayed_hash_rate, sizeof(displayed_hash_rate), 7,false);
 
         if(1)
         {
@@ -11757,7 +11762,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         return root;
     }
 
-    static void bitmain_c5_shutdown(struct thr_info *thr)
+    static void bitmain_soc_shutdown(struct thr_info *thr)
     {
         unsigned int ret;
         thr_info_cancel(check_system_work_id);
@@ -11772,20 +11777,20 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
     }
 
 
-    struct device_drv bitmain_c5_drv =
+    struct device_drv bitmain_soc_drv =
     {
-        .drv_id = DRIVER_bitmain_c5,
-        .dname = "Bitmain_C5",
-        .name = "BC5",
-        .drv_detect = bitmain_c5_detect,
-        .thread_prepare = bitmain_c5_prepare,
+        .drv_id = DRIVER_bitmain_soc,
+        .dname = "Bitmain_SOC",
+        .name = "BTM_SOC",
+        .drv_detect = bitmain_soc_detect,
+        .thread_prepare = bitmain_soc_prepare,
         .hash_work = hash_driver_work,
-        .scanwork = bitmain_c5_scanhash,
-        .flush_work = bitmain_c5_update,
-        .update_work = bitmain_c5_update,
+        .scanwork = bitmain_soc_scanhash,
+        .flush_work = bitmain_soc_update,
+        .update_work = bitmain_soc_update,
         .get_api_stats = bitmain_api_stats,
-        .reinit_device = bitmain_c5_reinit_device,
+        .reinit_device = bitmain_soc_reinit_device,
         .get_statline_before = get_bitmain_statline_before,
-        .thread_shutdown = bitmain_c5_shutdown,
+        .thread_shutdown = bitmain_soc_shutdown,
     };
 

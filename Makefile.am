@@ -95,10 +95,6 @@ if HAS_HASHRATIO
 cgminer_SOURCES += driver-hashratio.c driver-hashratio.h
 endif
 
-if HAS_BITMAIN
-cgminer_SOURCES += driver-hashratio.c driver-hashratio.h
-endif
-
 if HAS_BITFURY
 cgminer_SOURCES += driver-bitfury.c driver-bitfury.h
 endif

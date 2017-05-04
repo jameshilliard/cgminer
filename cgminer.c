@@ -114,6 +114,12 @@ char *curly = ":D";
 #include "driver-bitfury16.h"
 #endif
 
+#ifdef USE_BITMAIN_SOC
+#include <sys/sysinfo.h>
+#include "driver-btm-soc.h"
+#endif
+
+
 #ifdef USE_COINTERRA
 #include "driver-cointerra.h"
 #endif
@@ -395,7 +401,19 @@ pthread_cond_t gws_cond;
 
 double rolling1, rolling5, rolling15;
 double total_rolling;
-double total_mhashes_done;
+
+#ifdef USE_BITMAIN_SOC
+char displayed_hash_rate[16] = {0};
+char nonce_num10_string[NONCE_BUFF];
+char nonce_num30_string[NONCE_BUFF];
+char nonce_num60_string[NONCE_BUFF];
+double new_total_mhashes_done;
+double new_total_secs = 1.0;
+// only used for total_secs, because we need use system info time, instead of real data time.
+time_t total_tv_start_sys;
+time_t total_tv_end_sys;
+#endif
+
 static struct timeval total_tv_start, total_tv_end;
 static struct timeval restart_tv_start, update_tv_start;
 
@@ -1686,6 +1704,36 @@ static struct opt_table opt_config_table[] =
     set_int_0_to_100, NULL, &opt_bf16_alarm_temp,
     "Set control board alarm temperature range (0 - 100)"),
 #endif
+#ifdef USE_BITMAIN_SOC
+    OPT_WITHOUT_ARG("--bitmain-fan-ctrl",
+    opt_set_bool, &opt_bitmain_fan_ctrl,
+    "Enable bitmain miner fan controlling"),
+
+    OPT_WITH_ARG("--bitmain-fan-pwm",
+    set_int_0_to_100, opt_show_intval, &opt_bitmain_fan_pwm,
+    "Set bitmain fan pwm percentage 0~100"),
+
+    OPT_WITH_ARG("--bitmain-freq",
+    set_int_0_to_9999,opt_show_intval, &opt_bitmain_soc_freq,
+    "Set frequency"),
+
+    OPT_WITH_ARG("--bitmain-voltage",
+    set_int_0_to_9999,opt_show_intval, &opt_bitmain_soc_voltage,
+    "Set voltage"),
+
+    OPT_WITHOUT_ARG("--fixed-freq",
+    opt_set_bool, &opt_fixed_freq,
+    "Set bitmain miner use fixed freq"),
+
+    OPT_WITHOUT_ARG("--no-pre-heat",
+    opt_set_false, &opt_pre_heat,
+    "Set bitmain miner doesn't pre heat"),
+    
+    OPT_WITH_ARG("--multi-version",
+    opt_set_intval, NULL, &opt_multi_version,
+    "Multi version mining!"),
+#endif
+
 #ifdef USE_BLOCKERUPTER
     OPT_WITH_ARG("--bet-clk",
     opt_set_intval, opt_show_intval, &opt_bet_clk,
@@ -3084,6 +3132,7 @@ static int total_staged(void)
 WINDOW *mainwin, *statuswin, *logwin;
 #endif
 double total_secs = 1.0;
+
 static char statusline[256];
 /* logstart is where the log window should start */
 static int devcursor, logstart, logcursor;
@@ -4898,6 +4947,9 @@ static void _copy_work(struct work *work, const struct work *base_work, int noff
     }
     if (base_work->coinbase)
         work->coinbase = strdup(base_work->coinbase);
+#ifdef USE_BITMAIN_SOC
+    work->version = base_work->version;
+#endif
 }
 
 void set_work_ntime(struct work *work, int ntime)
@@ -5807,8 +5859,22 @@ static time_t hashdisplay_t;
 
 void zero_stats(void)
 {
-    int i;
 
+    int i;
+#ifdef USE_BITMAIN_SOC
+    struct sysinfo sInfo;
+    if (sysinfo(&sInfo))
+    {
+        applog(LOG_INFO, "Failed to get sysinfo, errno:%u, reason:%s\n",
+               errno, strerror(errno));
+        total_tv_start_sys=time(NULL);
+    }
+    else
+    {
+        total_tv_start_sys=sInfo.uptime;
+    }
+
+#endif
     cgtime(&total_tv_start);
     copy_time(&tv_hashmeter, &total_tv_start);
     total_rolling = 0;
@@ -5816,6 +5882,9 @@ void zero_stats(void)
     rolling5 = 0;
     rolling15 = 0;
     total_mhashes_done = 0;
+#ifdef USE_BITMAIN_SOC
+    new_total_mhashes_done = 0;
+#endif
     total_getworks = 0;
     total_accepted = 0;
     total_rejected = 0;
@@ -5826,6 +5895,9 @@ void zero_stats(void)
     total_go = 0;
     total_ro = 0;
     total_secs = 1.0;
+#ifdef USE_BITMAIN_SOC
+    new_total_secs = 1.0;
+#endif
     total_diff1 = 0;
     found_blocks = 0;
     total_diff_accepted = 0;
@@ -6636,6 +6708,20 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
     double tv_tdiff;
     time_t now_t;
     int diff_t;
+    
+#ifdef USE_BITMAIN_SOC
+    struct sysinfo sInfo;
+    if (sysinfo(&sInfo))
+    {
+        applog(LOG_INFO, "Failed to get sysinfo, errno:%u, reason:%s\n",
+               errno, strerror(errno));
+        total_tv_end_sys=time(NULL);
+    }
+    else
+    {
+        total_tv_end_sys=sInfo.uptime;
+    }
+#endif
 
     cgtime(&total_tv_end);
     tv_tdiff = tdiff(&total_tv_end, &tv_hashmeter);
@@ -6721,7 +6807,11 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
     decay_time(&rolling5, hashes_done, tv_tdiff, 300.0);
     decay_time(&rolling15, hashes_done, tv_tdiff, 900.0);
     global_hashrate = llround(total_rolling) * 1000000;
+#ifndef USE_BITMAIN_SOC
     total_secs = tdiff(&total_tv_end, &total_tv_start);
+#else
+    total_secs = total_tv_end_sys*1.0-total_tv_start_sys*1.0;
+#endif
     if (showlog)
     {
         char displayed_hashes[16], displayed_rolling[16];
@@ -7495,8 +7585,10 @@ retry_stratum:
                 if (unlikely(!pool->gbt_curl))
                     quit(1, "GBT CURL initialisation failed");
                 pool->gbt_solo = true;
+#ifdef HAVE_LIBCURL
                 if (!opt_btcd)
                     opt_btcd = pool;
+#endif
             }
         }
         /* Reset this so we can probe fully just after this. It will be
@@ -7799,6 +7891,40 @@ bool submit_nonce2_nonce(struct thr_info *thr, struct pool *pool, struct pool *r
     return ret;
 }
 #endif
+
+#ifdef USE_BITMAIN_SOC
+void get_work_by_nonce2(struct thr_info *thr,
+                        struct work **work,
+                        struct pool *pool,
+                        struct pool *real_pool,
+                        uint64_t nonce2,
+                        uint32_t ntime,
+                        uint32_t version)
+{
+    *work = make_work();
+    const int thr_id = thr->id;
+    struct cgpu_info *cgpu = thr->cgpu;
+    struct device_drv *drv = cgpu->drv;
+    cg_wlock(&pool->data_lock);
+    pool->nonce2 = nonce2;
+    //if(pool->support_vil) // comment as default
+    version = Swap32(version);
+    cg_memcpy(pool->header_bin, &version, 4);
+    cg_wunlock(&pool->data_lock);
+
+    gen_stratum_work(pool, *work);
+
+    (*work)->pool = real_pool;
+
+    (*work)->thr_id = thr_id;
+    (*work)->work_block = work_block;
+    (*work)->pool->works++;
+
+    (*work)->mined = true;
+    (*work)->version = version;
+}
+#endif
+
 
 /* Generates stratum based work based on the most recent notify information
  * from the pool. This will keep generating work while a pool is down so we use
@@ -9664,6 +9790,20 @@ void print_summary(void)
 
 static void clean_up(bool restarting)
 {
+#ifdef USE_BITMAIN_SOC
+    struct sysinfo sInfo;
+    if (sysinfo(&sInfo))
+    {
+        applog(LOG_INFO, "Failed to get sysinfo, errno:%u, reason:%s\n",
+               errno, strerror(errno));
+        total_tv_end_sys=time(NULL);
+    }
+    else
+    {
+        total_tv_end_sys=sInfo.uptime;
+    }
+#endif
+
 #ifdef USE_USBUTILS
     usb_polling = false;
     pthread_join(usb_poll_thread, NULL);
@@ -10444,6 +10584,31 @@ static void initialise_usb(void)
 #define initialise_usb() {}
 #endif
 
+#ifdef USE_BITMAIN_SOC
+void setStartTimePoint()
+{
+    char logstr[256];
+    struct sysinfo sInfo;
+    if (sysinfo(&sInfo))
+    {
+        sprintf(logstr, "Failed to get sysinfo, errno:%u, reason:%s\n",
+                errno, strerror(errno));
+        writeInitLogFile(logstr);
+
+        total_tv_start_sys=time(NULL);
+        total_tv_end_sys=total_tv_start_sys+1;
+    }
+    else
+    {
+        total_tv_start_sys=sInfo.uptime;
+        total_tv_end_sys=total_tv_start_sys+1;
+
+        sprintf(logstr, "setStartTimePoint total_tv_start_sys=%d total_tv_end_sys=%d\n",total_tv_start_sys, total_tv_end_sys);
+        writeInitLogFile(logstr);
+    }
+}
+#endif
+
 int main(int argc, char *argv[])
 {
     struct sigaction handler;
@@ -10840,7 +11005,21 @@ begin_bench:
 
         cgpu->rolling = cgpu->total_mhashes = 0;
     }
-
+#ifdef USE_BITMAIN_SOC
+    struct sysinfo sInfo;
+    if (sysinfo(&sInfo))
+    {
+        applog(LOG_INFO, "Failed to get sysinfo, errno:%u, reason:%s\n",
+               errno, strerror(errno));
+        total_tv_end_sys=time(NULL);
+        total_tv_start_sys=time(NULL);
+    }
+    else
+    {
+        total_tv_end_sys=sInfo.uptime;
+        total_tv_start_sys=sInfo.uptime;
+    }
+#endif
     cgtime(&total_tv_start);
     cgtime(&total_tv_end);
     cgtime(&tv_hashmeter);

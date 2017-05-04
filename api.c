@@ -5133,6 +5133,16 @@ void mcast_init()
         quit(1, "API mcast thread create failed");
 }
 
+#ifdef USE_BITMAIN_SOC
+void reCalculateAVG()
+{
+    new_total_mhashes_done = total_mhashes_done;
+    if(total_secs>0)
+        new_total_secs = total_secs-1;
+    else new_total_secs=total_secs;
+}
+#endif
+
 void api(int api_thr_id)
 {
     struct io_data *io_data;
