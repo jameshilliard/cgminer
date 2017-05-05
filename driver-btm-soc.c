@@ -279,7 +279,6 @@ pthread_mutex_t init_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 bool isC5_CtrlBoard=false;
 bool isChainAllCoresOpened[BITMAIN_MAX_CHAIN_NUM]= {false}; // is all cores opened flag
-char g_miner_version[256] = {0};
 
 void set_led(bool stop);
 void open_core(bool nullwork_enable);
@@ -3993,7 +3992,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
             fclose(fd);
         }
         pthread_mutex_unlock(&init_log_mutex);
-        //printf(logstr);
     }
 
     void clearInitLogFile()
@@ -5904,8 +5902,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
             fwrite(logstr,1,strlen(logstr),fd);
             fclose(fd);
         }
-        //updateLogFile();
-        //printf(logstr);
     }
 
     void updateLogFile()
@@ -6215,7 +6211,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                     sprintf(error_info,"J%d:3",i+1);
                     saveSearchFailedFlagInfo(error_info);
 
-                    system("sync");
                     system("reboot");
                 }
 
@@ -6987,7 +6982,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                                     sprintf(error_info,"J%d:6",i+1);
                                     saveSearchFailedFlagInfo(error_info);
 
-                                    system("sync");
                                     system("reboot");
                                 }
                             }
@@ -7000,7 +6994,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                                     sprintf(error_info,"J%d:6",i+1);
                                     saveSearchFailedFlagInfo(error_info);
 
-                                    system("sync");
                                     system("reboot");
                                 }
                             }
@@ -7270,7 +7263,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                             sprintf(error_info,"P:1");
                             saveSearchFailedFlagInfo(error_info);
 
-                            system("sync");
                             system("reboot");
                         }
                         break;
@@ -7282,7 +7274,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                             sprintf(error_info,"F:1");
                             saveSearchFailedFlagInfo(error_info);
 
-                            system("sync");
                             system("reboot");
                         }
                         break;
@@ -7994,6 +7985,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
             fwrite(testnumStr,1,sizeof(testnumStr),fd);
             fclose(fd);
         }
+        system("sync");
     }
 
     int readRebootTestNum()
@@ -8028,6 +8020,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
             fwrite(testnumStr,1,sizeof(testnumStr),fd);
             fclose(fd);
         }
+        system("sync");
     }
 
     int readRestartNum()
@@ -8063,6 +8056,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
             fwrite(testnumStr,1,sizeof(testnumStr),fd);
             fclose(fd);
         }
+        system("sync");
     }
 
     int readRetryFlag()
@@ -8265,7 +8259,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                     if((rebootTestNum-1)==0)
                         saveRestartNum(2);
 #endif
-                    system("sync");
 
 #if ((defined ENABLE_FINAL_TEST_WITHOUT_REBOOT) && (defined REBOOT_TEST_ONCE_1HOUR))
                     rebootTestNum=0;
@@ -8286,7 +8279,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                     sprintf(error_info,"R:1");
                     saveSearchFailedFlagInfo(error_info);
 
-                    system("sync");
                     system("reboot");
                 }
 #endif
@@ -9377,6 +9369,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         system("cp /tmp/search /tmp/err1.log -f");
         system("cp /tmp/freq /tmp/err2.log -f");
         system("cp /tmp/lasttemp /tmp/err3.log -f");
+        system("sync");
     }
 
     int bitmain_soc_init(struct init_config config)
@@ -9539,7 +9532,7 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         hardware_version = get_hardware_version();
         pcb_version = (hardware_version >> 16) & 0x00007fff;    // for T9+ the highest bit is used as config for S9 or T9+ mode, so use 7fff
         fpga_version = hardware_version & 0x000000ff;
-        sprintf(g_miner_version, "%d.%d.%d.%d", fpga_version, pcb_version, C5_VERSION, BMMINER_VERSION);
+        sprintf(g_miner_version, "%d.%d.%d.%d", fpga_version, pcb_version, SOC_VERSION, BMMINER_VERSION);
 
 #ifdef USE_NEW_RESET_FPGA
         set_reset_allhashboard(1);
@@ -9874,7 +9867,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                     sprintf(error_info,"J%d:3",i+1);
                     saveSearchFailedFlagInfo(error_info);
 
-                    system("sync");
                     system("reboot");
                 }
 
@@ -9936,7 +9928,6 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                     sprintf(error_info,"J%d:3",i+1);
                     saveSearchFailedFlagInfo(error_info);
 
-                    system("sync");
                     system("reboot");
                 }
 
@@ -10340,13 +10331,15 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
                     test_result=clement_doTestBoard(true);
 
 #ifdef ENABLE_REINIT_WHEN_TESTFAILED
+#ifdef DEBUG_FORCE_REINIT
+                    test_result=false;
+#endif
                     if((!test_result) && (readRetryFlag()==0))
                     {
                         // save a flag file to indicate that we need use the higher voltage after open core, but still meet the limit rules of power and hashrate
                         saveRetryFlag(1);
 
                         // call system to restart bmminer
-                        system("/etc/init.d/bmminer.sh restart &");
                         exit(0);
                         //  while(1)sleep(1);
                     }
@@ -10863,10 +10856,10 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
         if (pool_stratum->swork.job_id)
         {
             job_id_len = strlen(pool->swork.job_id);
-            crc = crc16((unsigned char *)pool->swork.job_id, job_id_len);
+            crc = CRC16((unsigned char *)pool->swork.job_id, job_id_len);
             job_id_len = strlen(pool_stratum->swork.job_id);
 
-            if (crc16((unsigned char *)pool_stratum->swork.job_id, job_id_len) == crc)
+            if (CRC16((unsigned char *)pool_stratum->swork.job_id, job_id_len) == crc)
                 return;
         }
 
@@ -10960,7 +10953,10 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
     static void bitmain_soc_reinit_device(struct cgpu_info *bitmain)
     {
         if(!status_error)
-            system("/etc/init.d/bmminer.sh restart > /dev/null 2>&1 &");
+        {
+            //system("/etc/init.d/bmminer.sh restart > /dev/null 2>&1 &");
+            exit(0);
+        }
     }
 
 

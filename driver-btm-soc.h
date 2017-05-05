@@ -87,7 +87,7 @@
 
 //ASIC macro define
 //ASIC register address
-#define C5_VERSION              1
+#define SOC_VERSION              1
 #define CHIP_ADDRESS            0x0
 #define GOLDEN_NONCE_COUNTER    0x8
 #define PLL_PARAMETER           0xc
@@ -338,6 +338,7 @@ extern unsigned int PHY_MEM_NONCE2_JOBID_ADDRESS;
 //fan
 
 // BELOW IS ALL FOR DEBUG !!! normally all must be undefined!!!
+#undef DEBUG_FORCE_REINIT   //defined to force to reinit with higher voltage
 #undef DEBUG_KEEP_USE_PIC_VOLTAGE_WITHOUT_CHECKING_VOLTAGE_OF_SEARCHFREQ    // if defined, will read pic voltage at first , and use this voltage in mining as working voltage, ignore the backup voltage of search freq
 #undef DEBUG_ENABLE_I2C_TIMEOUT_PROCESS // if defined, sw will process I2C timeout, but normally FPGA will process timeout, SW do not need this
 #undef DEBUG_PRINT_T9_PLUS_PIC_HEART_INFO   // if defined, used to debug T9+ bug: pic heart cmd failed!
@@ -908,7 +909,8 @@ extern int ADD_FREQ;
 extern int ADD_FREQ1;
 extern int fpga_version;
 extern int opt_multi_version;
-extern char g_miner_version[256];
+
+
 
 
 #endif

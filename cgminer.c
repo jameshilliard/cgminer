@@ -401,12 +401,18 @@ pthread_cond_t gws_cond;
 
 double rolling1, rolling5, rolling15;
 double total_rolling;
+double total_mhashes_done;
 
 #ifdef USE_BITMAIN_SOC
+char *opt_version_path = NULL;
 char displayed_hash_rate[16] = {0};
 char nonce_num10_string[NONCE_BUFF];
 char nonce_num30_string[NONCE_BUFF];
 char nonce_num60_string[NONCE_BUFF];
+char g_miner_version[256] = {0};
+char g_miner_compiletime[256] = {0};
+char g_miner_type[256] = {0};
+
 double new_total_mhashes_done;
 double new_total_secs = 1.0;
 // only used for total_secs, because we need use system info time, instead of real data time.
@@ -1294,6 +1300,15 @@ static char *set_null(const char __maybe_unused *arg)
     return NULL;
 }
 
+#ifdef USE_BITMAIN_SOC
+static char *set_version_path(const char *arg)
+{
+    opt_set_charp(arg, &opt_version_path);
+
+    return NULL;
+}
+#endif
+
 /* These options are available from config file or commandline */
 static struct opt_table opt_config_table[] =
 {
@@ -1705,6 +1720,10 @@ static struct opt_table opt_config_table[] =
     "Set control board alarm temperature range (0 - 100)"),
 #endif
 #ifdef USE_BITMAIN_SOC
+    OPT_WITH_ARG("--version-file",
+    set_version_path, NULL, opt_hidden,
+    "Set miner version file"),
+    
     OPT_WITHOUT_ARG("--bitmain-fan-ctrl",
     opt_set_bool, &opt_bitmain_fan_ctrl,
     "Enable bitmain miner fan controlling"),
@@ -1728,7 +1747,7 @@ static struct opt_table opt_config_table[] =
     OPT_WITHOUT_ARG("--no-pre-heat",
     opt_set_false, &opt_pre_heat,
     "Set bitmain miner doesn't pre heat"),
-    
+
     OPT_WITH_ARG("--multi-version",
     opt_set_intval, NULL, &opt_multi_version,
     "Multi version mining!"),
@@ -6708,7 +6727,7 @@ static void hashmeter(int thr_id, uint64_t hashes_done)
     double tv_tdiff;
     time_t now_t;
     int diff_t;
-    
+
 #ifdef USE_BITMAIN_SOC
     struct sysinfo sInfo;
     if (sysinfo(&sInfo))
@@ -10753,6 +10772,65 @@ int main(int argc, char *argv[])
         }
         set_target(bench_target, 32);
     }
+
+#ifdef USE_BITMAIN_SOC
+    if(opt_version_path)
+    {
+        FILE * fpversion = fopen(opt_version_path, "rb");
+        char tmp[256] = {0};
+        int len = 0;
+        char * start = 0;
+
+        if(fpversion == NULL)
+        {
+            applog(LOG_ERR, "Open miner version file %s error", opt_version_path);
+        }
+        else
+        {
+            len = fread(tmp, 1, 256, fpversion);
+
+            if(len <= 0)
+            {
+                applog(LOG_ERR, "Read miner version file %s error %d", opt_version_path, len);
+            }
+            else
+            {
+                start = strstr(tmp, "\n");
+
+                if(start == NULL)
+                {
+                    strcpy(g_miner_compiletime, tmp);
+                }
+                else
+                {
+                    cg_memcpy(g_miner_compiletime, tmp, start-tmp);
+                    strcpy(g_miner_type, start+1);
+                }
+
+                if(g_miner_compiletime[strlen(g_miner_compiletime)-1] == '\n')
+                {
+                    g_miner_compiletime[strlen(g_miner_compiletime)-1] = 0;
+                }
+
+                if(g_miner_compiletime[strlen(g_miner_compiletime)-1] == '\r')
+                {
+                    g_miner_compiletime[strlen(g_miner_compiletime)-1] = 0;
+                }
+
+                if(g_miner_type[strlen(g_miner_type)-1] == '\n')
+                {
+                    g_miner_type[strlen(g_miner_type)-1] = 0;
+                }
+
+                if(g_miner_type[strlen(g_miner_type)-1] == '\r')
+                {
+                    g_miner_type[strlen(g_miner_type)-1] = 0;
+                }
+            }
+        }
+        applog(LOG_ERR, "Miner compile time: %s type: %s", g_miner_compiletime, g_miner_type);
+    }
+#endif
 
 #ifdef HAVE_CURSES
     if (opt_realquiet || opt_display_devs || opt_decode)
