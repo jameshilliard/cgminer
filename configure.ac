@@ -296,13 +296,48 @@ fi
 AM_CONDITIONAL([HAS_BITFURY16], [test x$bitfury16 = xyes])
 
 bitmain_soc="no"
+bitmain_R4="no"
+bitmain_S9="no"
+bitmain_T9="no"
+bitmain_T9P="no"
 
 AC_ARG_ENABLE([bitmain_soc],
 	[AC_HELP_STRING([--enable-bitmain_soc],[Compile support for Bitmain ASICs STANDALONE(default disabled)])],
 	[bitmain_soc=$enableval]
 	)
+AC_ARG_ENABLE([bitmain_R4],
+	[AC_HELP_STRING([--enable-bitmain_R4],[Compile support for Bitmain R4])],
+	[bitmain_R4=$enableval]
+	)
+AC_ARG_ENABLE([bitmain_S9],
+	[AC_HELP_STRING([--enable-bitmain_S9],[Compile support for Bitmain S9])],
+	[bitmain_S9=$enableval]
+	)
+AC_ARG_ENABLE([bitmain_T9],
+	[AC_HELP_STRING([--enable-bitmain_T9],[Compile support for Bitmain T9])],
+	[bitmain_T9=$enableval]
+	)
+AC_ARG_ENABLE([bitmain_T9P],
+	[AC_HELP_STRING([--enable-bitmain_T9P],[Compile support for Bitmain T9+])],
+	[bitmain_T9P=$enableval]
+	)
 if test "x$bitmain_soc" = xyes; then
 	AC_DEFINE([USE_BITMAIN_SOC], [1], [Defined to 1 if Bitmain ASICs support is wanted])
+    if test "x$bitmain_R4" = xyes; then
+        AC_DEFINE([R4], [1], [Defined to 1 for R4])
+    fi
+    if test "x$bitmain_S9" = xyes; then
+        AC_DEFINE([S9_63], [1], [Defined to 1 for S9])
+    fi
+    if test "x$bitmain_T9" = xyes; then
+        AC_DEFINE([S9_PLUS], [1], [Defined to 1 for T9])
+    fi
+    if test "x$bitmain_T9P" = xyes; then
+        AC_DEFINE([T9_18], [1], [Defined to 1 for T9+])
+    fi
+    if test "x$bitmain_R4$bitmain_S9$bitmain_T9$bitmain_T9P" = xnononono; then
+        AC_DEFINE([S9_63], [1], [Defined to 1 for default])
+    fi
 	drivercount=x$drivercount
 	standalone="yes"
 	LIBZ_LIBS="compat/libz/libz.a"

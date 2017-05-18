@@ -11,6 +11,7 @@
 #ifndef __DRIVER_BTM_SOC_H__
 #define __DRIVER_BTM_SOC_H__
 
+#include "config.h"
 //FPGA rgister Address Map
 #define HARDWARE_VERSION                (0x00000000/sizeof(int))
 #define FAN_SPEED                       (0x00000004/sizeof(int))
@@ -211,7 +212,7 @@
 // ATTENTION: if MEM size is changed, must change this micro definition too!!!   use MAX size (BYTE) - 16 MB as FPGA start memory address
 #define PHY_MEM_NONCE2_JOBID_ADDRESS_XILINX_1GB         ((1024-16)*1024*1024)
 #define PHY_MEM_NONCE2_JOBID_ADDRESS_XILINX_512MB       ((512-16)*1024*1024)        // XILINX use 512MB memory
-#define PHY_MEM_NONCE2_JOBID_ADDRESS_XILINX_256MB       ((256-16)*1024*1024)        // XILINX use 512MB memory
+#define PHY_MEM_NONCE2_JOBID_ADDRESS_XILINX_256MB       ((256-16)*1024*1024)        // XILINX use 256MB memory
 
 #define PHY_MEM_NONCE2_JOBID_ADDRESS_C5         ((1024-16)*1024*1024)
 extern unsigned int PHY_MEM_NONCE2_JOBID_ADDRESS;
@@ -219,10 +220,10 @@ extern unsigned int PHY_MEM_NONCE2_JOBID_ADDRESS;
 #define PHY_MEM_JOB_START_ADDRESS_1     (PHY_MEM_NONCE2_JOBID_ADDRESS + NONCE2_AND_JOBID_STORE_SPACE)
 #define PHY_MEM_JOB_START_ADDRESS_2     (PHY_MEM_JOB_START_ADDRESS_1 + JOB_STORE_SPACE)
 
-#include "miner_type.h"     // use setminertype to define miner type in this file instead of belows!!!
+//#include "miner_type.h"     // use setminertype to define miner type in this file instead of belows!!!
 //#define R4        // if defined , for R4  63 chips
 //#define S9_PLUS   // if defined , for T9  57 chips
-//#define S9_63 // if defined , for S9  63 chips
+//#define S9_63     // if defined , for S9  63 chips
 //#define T9_18     // if defined , for T9+  18 chips
 
 #define RESET_KEEP_TIME     3   // keep reset signal for 1 secnods

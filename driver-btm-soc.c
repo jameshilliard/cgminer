@@ -8,7 +8,6 @@
  * any later version.  See COPYING for more details.
  */
 
-#include "config.h"
 #include <assert.h>
 
 #include <limits.h>
@@ -3222,7 +3221,8 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
 #else
         if(is218_Temp)
             temp_highest=dev->temp_top1[TEMP_POS_LOCAL];
-        else temp_highest = dev->temp_top1[PWM_T];
+        else 
+            temp_highest = dev->temp_top1[PWM_T];
 #endif
 
         temp_change = temp_highest - last_temperature;
@@ -5644,7 +5644,8 @@ void set_pic_iic_flash_addr_pointer(unsigned char chain, unsigned char addr_H, u
 
             if(abs(error_Limit) <= MAX_ERROR_LIMIT_ABS)
                 check_ok_counter++;
-            else check_ok_counter=0;
+            else 
+                check_ok_counter=0;
         }
         while (check_ok_counter<3);
 
